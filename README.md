@@ -14,14 +14,23 @@
 #### 2、软件包及相关信息：
 ```shell
 k8s-v1.23.9/pkgs/k8s-etcd-3.4.18+bionic_amd64.deb                 # 持久状态存储etcd
-k8s-v1.23.9/pkgs/k8s-kubernetes-master-1.23.9+bionic_amd64.deb    # master组件(kube-apiserver、kube-controller-manager、kube-scheduler)
-k8s-v1.23.9/pkgs/k8s-kubernetes-node-1.23.9+bionic_amd64.deb      # node组件(kubelet、kube-proxy)
+k8s-v1.23.9/pkgs/k8s-kubernetes-master-1.23.9+bionic_amd64.deb    # master核心组件(kube-apiserver、kube-controller-manager、kube-scheduler)
+k8s-v1.23.9/pkgs/k8s-kubernetes-node-1.23.9+bionic_amd64.deb      # node核心组件(kubelet、kube-proxy)
 k8s-v1.23.9/pkgs/k8s-slb-1.16.1+bionic_amd64.deb                  # nginx四层代理，部署在node之上，作为kubelet、kube-proxy的代理访问kube-apiserver
 k8s-v1.23.9/calico-v3.22.3                                        # 网络插件calico
 k8s-v1.23.9/coredns-v1.8.6                                        # 服务发现coredns
 k8s-v1.23.9/dashboard-v2.5.1                                      # 集群可视化dashboard
 k8s-v1.23.9/docker-ce-v20.10.12                                   # 容器服务docker
 k8s-v1.23.9/metrics-server-v0.6.1                                 # 核心指标监控metrics-server
+
+
+注意：
+k8s-etcd、k8s-kubernetes-master、k8s-kubernetes-node包中二进制程序由官方下载，此处仅做了二次封装，k8s-slb由nginx-1.16.1.tar.gz源码编译，未更改过任何源代码：
+https://dl.k8s.io/v1.23.9/kubernetes-server-linux-amd64.tar.gz
+https://dl.k8s.io/v1.23.9/kubernetes-client-linux-amd64.tar.gz
+https://dl.k8s.io/v1.23.9/kubernetes-node-linux-amd64.tar.gz
+https://nginx.org/download/nginx-1.16.1.tar.gz
+https://github.com/etcd-io/etcd/releases/download/v3.4.18/etcd-v3.4.18-linux-amd64.tar.gz
 ```
 
 
