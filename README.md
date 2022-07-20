@@ -620,7 +620,7 @@ master-3   NotReady   <none>   69s   v1.23.9   10.0.0.183    <none>        Ubunt
 
 
 ## 五、部署网络插件Calico
-#### 1、调整calico镜像仓库地址
+#### 1、调整calico镜像仓库地址：
 ```shell
 root@master-1:~# cd k8s-v1.23.9/calico-v3.22.3
 root@master-1:~# cat calico.yaml | grep image -n
@@ -628,20 +628,20 @@ root@master-1:~# cat calico.yaml | grep image -n
 279:          image: docker.io/calico/pod2daemon-flexvol:v3.22.3
 290:          image: docker.io/calico/node:v3.22.3
 535:          image: docker.io/calico/kube-controllers:v3.22.3
-root@master-1:~/k8s-v1.23.9/calico-v3.22.3# vi calico.yaml                # 将镜像调整为以下（镜像要提前推送到本地镜像仓库）：              
+root@master-1:~/k8s-v1.23.9/calico-v3.22.3# vi calico.yaml                # 将镜像调整为以下（镜像要提前下载并推送到本地镜像仓库）：              
 235:          image: hub.speech.local/calico/cni:v3.22.3
 279:          image: hub.speech.local/calico/pod2daemon-flexvol:v3.22.3
 290:          image: hub.speech.local/calico/node:v3.22.3
 535:          image: hub.speech.local/calico/kube-controllers:v3.22.3
 ```
 
-#### 2、设置etcd集群地址
+#### 2、设置etcd集群地址：
 ```shell
 root@master-1:~/k8s-v1.23.9/calico-v3.22.3# ETCD_ENDPOINTS="https://10.0.0.181:2379,https://10.0.0.182:2379,https://10.0.0.183:2379"
 root@master-1:~/k8s-v1.23.9/calico-v3.22.3# sed -i "s#.*etcd_endpoints:.*#  etcd_endpoints: \"${ETCD_ENDPOINTS}\"#g" calico.yaml
 ```
 
-#### 3、设置etcd证书
+#### 3、设置etcd证书：
 ```shell
 root@master-1:~/k8s-v1.23.9/calico-v3.22.3# ETCD_CA=`cat /k8s/etcd/ssl/ca.pem | base64 | tr -d '\n'`
 root@master-1:~/k8s-v1.23.9/calico-v3.22.3# ETCD_CERT=`cat /k8s/etcd/ssl/etcd.pem | base64 | tr -d '\n'`
@@ -654,13 +654,13 @@ root@master-1:~/k8s-v1.23.9/calico-v3.22.3# sed -i 's#.*etcd_cert:.*#  etcd_cert
 root@master-1:~/k8s-v1.23.9/calico-v3.22.3# sed -i 's#.*etcd_key:.*#  etcd_key: "/calico-secrets/etcd-key"#g' calico.yaml
 ```
 
-#### 4、设置Pod地址池（注意要和kube-proxy配置项--cluster-cidr地址池一致）
+#### 4、设置Pod地址池（注意要和kube-proxy配置项--cluster-cidr地址池一致）：
 ```shell
 root@master-1:~/k8s-v1.23.9/calico-v3.22.3# CALICO_IPV4POOL_CIDR="10.244.0.0/16"
 root@master-1:~/k8s-v1.23.9/calico-v3.22.3# sed -i "s#192.168.0.0/16#${CALICO_IPV4POOL_CIDR}#g" calico.yaml
 ```
 
-#### 5、创建calico资源
+#### 5、创建calico资源：
 ```shell
 root@master-1:~/k8s-v1.23.9/calico-v3.22.3# kubectl apply -f calico.yaml
 secret/calico-etcd-secrets created
@@ -676,7 +676,7 @@ serviceaccount/calico-kube-controllers created
 poddisruptionbudget.policy/calico-kube-controllers created
 ```
 
-#### 6、查看pod
+#### 6、查看pod：
 ```shell
 root@master-1:~# kubectl get pods -A -o wide
 NAMESPACE     NAME                                       READY   STATUS    RESTARTS   AGE    IP           NODE       NOMINATED NODE   READINESS GATES
@@ -686,7 +686,7 @@ kube-system   calico-node-9vbc8                          1/1     Running   0    
 kube-system   calico-node-d92c8                          1/1     Running   0          2m6s   10.0.0.181   master-1   <none>           <none>
 ```
 
-#### 7、再次查看node
+#### 7、再次查看node：
 ```shell
 root@master-1:~# kubectl get node -o wide
 NAME       STATUS   ROLES    AGE   VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION       CONTAINER-RUNTIME
@@ -696,6 +696,61 @@ master-3   Ready    <none>   22m   v1.23.9   10.0.0.183    <none>        Ubuntu 
 ```
 
 
+## 六、部署CoreDNS
+#### 1、调整coredns镜像仓库地址：
+```shell
+root@master-1:~# cd k8s-v1.23.9/coredns-v1.8.6
+root@master-1:~/k8s-v1.23.9/coredns-v1.8.6# cat coredns.yaml | grep image: -n
+143:        image: registry.cn-hangzhou.aliyuncs.com/google_containers/coredns:v1.8.6
+root@master-1:~/k8s-v1.23.9/coredns-v1.8.6# vi coredns.yaml +143       # 将镜像调整为以下（镜像要提前下载并推送到本地镜像仓库）：
+143:        image: hub.speech.local/k8s.gcr.io/coredns:v1.8.6
+```
+
+#### 2、调整coredns配置：
+```shell
+root@master-1:~/k8s-v1.23.9/coredns-v1.8.6# CLUSTER_DNS_DOMAIN="cluster.local"
+root@master-1:~/k8s-v1.23.9/coredns-v1.8.6# CLUSTER_DNS_SERVER="10.254.0.2"
+root@master-1:~/k8s-v1.23.9/coredns-v1.8.6# CLUSTER_DNS_MEMORY_LIMIT="200Mi"
+root@master-1:~/k8s-v1.23.9/coredns-v1.8.6# sed -i -e "s@__DNS__DOMAIN__@${CLUSTER_DNS_DOMAIN}@" \
+>        -e "s@__DNS__SERVER__@${CLUSTER_DNS_SERVER}@" \
+>        -e "s@__DNS__MEMORY__LIMIT__@${CLUSTER_DNS_MEMORY_LIMIT}@" \
+>        coredns.yaml
+```
+
+#### 3、创建coredns资源：
+```shell
+root@master-1:~/k8s-v1.23.9/coredns-v1.8.6# kubectl apply -f coredns.yaml
+serviceaccount/coredns created
+clusterrole.rbac.authorization.k8s.io/system:coredns created
+clusterrolebinding.rbac.authorization.k8s.io/system:coredns created
+configmap/coredns created
+deployment.apps/coredns created
+service/kube-dns created
+```
+
+#### 4、再次查看pod资源：
+```shell
+root@master-1:~/k8s-v1.23.9/coredns-v1.8.6# kubectl get pods -A -o wide
+NAMESPACE     NAME                                       READY   STATUS    RESTARTS   AGE   IP             NODE       NOMINATED NODE   READINESS GATES
+kube-system   calico-kube-controllers-867987dd7c-9zr9f   1/1     Running   0          21m   10.0.0.182     master-2   <none>           <none>
+kube-system   calico-node-4qnm5                          1/1     Running   0          21m   10.0.0.182     master-2   <none>           <none>
+kube-system   calico-node-9vbc8                          1/1     Running   0          21m   10.0.0.183     master-3   <none>           <none>
+kube-system   calico-node-d92c8                          1/1     Running   0          21m   10.0.0.181     master-1   <none>           <none>
+kube-system   coredns-54d7c66b75-glmmz                   1/1     Running   0          22s   10.244.218.0   master-1   <none>           <none>
+kube-system   coredns-54d7c66b75-jwq8j                   1/1     Running   0          22s   10.244.65.0    master-3   <none>           <none>
+```
+
+
+## 七、添加master污点
+1、master作为集群控制平面一般不会运行负载：
+```shell
+root@master-1:~# kubectl taint node master-1 node-role.kubernetes.io/master:NoSchedule
+node/master-1 tainted
+root@master-1:~# kubectl taint node master-2 node-role.kubernetes.io/master:NoSchedule
+node/master-2 tainted
+root@master-1:~# kubectl taint node master-3 node-role.kubernetes.io/master:NoSchedule
+node/master-3 tainted
+```
 
 
 
