@@ -42,6 +42,7 @@ https://github.com/etcd-io/etcd/releases/download/v3.4.18/etcd-v3.4.18-linux-amd
 - 配置时间同步
 - 配置master-1到master-2、master-3免密登录
 - 关闭unattended-upgrades.service自动更新服务
+- 提前安装ipvsadm、ipset
 - 提前安装部署Harbor（当前Harbor域名解析为：hub.speech.local）
 - 添加各节点DNS解析或调整本地hosts文件：
 ```shell
@@ -362,5 +363,208 @@ drwxr-xr-x 2 root root 4.0K Jul 20 15:17 cfssl-tools
 -rw------- 1 root root 1.7K Jul 20 15:18 sa.key
 -rw-r--r-- 1 root root  451 Jul 20 15:18 sa.pub
 ```
+
+#### 3、分发kubernetes集群证书到master-2、master-3节点：
+```shell
+root@master-1:~# cd /k8s/kubernetes
+root@master-1:/k8s/kubernetes# scp -r ssl root@10.0.0.182:/k8s/kubernetes
+root@master-1:/k8s/kubernetes# scp -r ssl root@10.0.0.183:/k8s/kubernetes
+```
+
+#### 4、初始化token.svc、kubeconfig配置文件：
+```shell
+root@master-1:~# cd /k8s/kubernetes/cfg/init-kubeconfig
+root@master-1:/k8s/kubernetes/cfg/init-kubeconfig# ./init-kubeconfig.sh 
+Cluster "kubernetes" set.
+User "kube-scheduler" set.
+Context "kube-scheduler@kubernetes" created.
+Switched to context "kube-scheduler@kubernetes".
+Cluster "kubernetes" set.
+User "kube-controller-manager" set.
+Context "kube-controller-manager@kubernetes" created.
+Switched to context "kube-controller-manager@kubernetes".
+Cluster "kubernetes" set.
+User "admin" set.
+Context "admin@kubernetes" created.
+Switched to context "admin@kubernetes".
+Cluster "kubernetes" set.
+User "kube-proxy" set.
+Context "kube-proxy@kubernetes" created.
+Switched to context "kube-proxy@kubernetes".
+Cluster "kubernetes" set.
+User "kubelet-bootstrap" set.
+Context "kubelet-bootstrap@kubernetes" created.
+Switched to context "kubelet-bootstrap@kubernetes".
+Token: 6b53b52930ed480bb02048d7c547f0ea,kubelet-bootstrap,10001,system:kubelet-bootstrap
+root@master-1:/k8s/kubernetes/cfg/init-kubeconfig# ls -lh ../
+total 64K
+-rw------- 1 root root 6.1K Jul 20 15:31 admin.kubeconfig
+-rw------- 1 root root 2.1K Jul 20 15:31 bootstrap.kubeconfig
+drwxr-xr-x 2 root root 4.0K Jul 20 15:08 init-kubeconfig
+-rw-r--r-- 1 root root 1.5K Jul 18 16:54 kube-apiserver
+-rw-r--r-- 1 root root 1017 Jul 18 16:54 kube-controller-manager
+-rw------- 1 root root 6.2K Jul 20 15:31 kube-controller-manager.kubeconfig
+-rw-r--r-- 1 root root  638 Jul 18 16:54 kubelet
+-rw-r--r-- 1 root root  206 Jul 18 16:54 kube-proxy
+-rw------- 1 root root 6.1K Jul 20 15:31 kube-proxy.kubeconfig
+-rw-r--r-- 1 root root  371 Jul 18 16:54 kube-scheduler
+-rw------- 1 root root 6.2K Jul 20 15:31 kube-scheduler.kubeconfig
+-rw-r--r-- 1 root root   82 Jul 20 15:31 token.csv
+```
+
+#### 5、分发token.svc、kubeconfig配置文件到master-2、master-3节点：
+```shell
+root@master-1:/k8s/kubernetes# scp -r cfg root@10.0.0.182:/k8s/kubernetes
+root@master-1:/k8s/kubernetes# scp -r cfg root@10.0.0.183:/k8s/kubernetes
+```
+
+#### 6、调整master-1、master-2、master-3各节点kube-apiserver配置文件：
+```shell
+root@master-1:~# vi /k8s/kubernetes/cfg/kube-apiserver
+KUBE_APISERVER_ARGS=" \
+    --advertise-address=10.0.0.181 \                                                             # 注意此项
+    --allow-privileged=true \
+    --authorization-mode=Node,RBAC \
+    --enable-admission-plugins=NodeRestriction \
+    --anonymous-auth=false \
+    --bind-address=0.0.0.0 \
+    --secure-port=6443 \
+    --enable-bootstrap-token-auth \
+    --token-auth-file=/k8s/kubernetes/cfg/token.csv \
+    --client-ca-file=/k8s/kubernetes/ssl/ca.pem \
+    --tls-cert-file=/k8s/kubernetes/ssl/kube-apiserver.pem \
+    --tls-private-key-file=/k8s/kubernetes/ssl/kube-apiserver-key.pem \
+    --etcd-servers=https://10.0.0.181:2379,https://10.0.0.182:2379,https://10.0.0.183:2379 \     # 注意此项
+    --etcd-cafile=/k8s/etcd/ssl/ca.pem \
+    --etcd-certfile=/k8s/etcd/ssl/etcd.pem \
+    --etcd-keyfile=/k8s/etcd/ssl/etcd-key.pem \
+    --service-cluster-ip-range=10.254.0.0/16 \
+    --service-node-port-range=30000-50000 \
+    --service-account-issuer=https://kubernetes.default.svc.cluster.local \
+    --service-account-key-file=/k8s/kubernetes/ssl/sa.pub \
+    --service-account-signing-key-file=/k8s/kubernetes/ssl/sa.key \
+    --proxy-client-cert-file=/k8s/kubernetes/ssl/front-proxy-client.pem \
+    --proxy-client-key-file=/k8s/kubernetes/ssl/front-proxy-client-key.pem \
+    --requestheader-allowed-names=front-proxy-client \
+    --requestheader-client-ca-file=/k8s/kubernetes/ssl/front-proxy-ca.pem \
+    --requestheader-extra-headers-prefix=X-Remote-Extra- \
+    --requestheader-group-headers=X-Remote-Group \
+    --requestheader-username-headers=X-Remote-User \
+    --logtostderr=true \
+    --v=2"
+```
+```shell
+root@master-2:~# vi /k8s/kubernetes/cfg/kube-apiserver
+KUBE_APISERVER_ARGS=" \
+    --advertise-address=10.0.0.182 \
+    --allow-privileged=true \
+    --authorization-mode=Node,RBAC \
+    --enable-admission-plugins=NodeRestriction \
+    --anonymous-auth=false \
+    --bind-address=0.0.0.0 \
+    --secure-port=6443 \
+    --enable-bootstrap-token-auth \
+    --token-auth-file=/k8s/kubernetes/cfg/token.csv \
+    --client-ca-file=/k8s/kubernetes/ssl/ca.pem \
+    --tls-cert-file=/k8s/kubernetes/ssl/kube-apiserver.pem \
+    --tls-private-key-file=/k8s/kubernetes/ssl/kube-apiserver-key.pem \
+    --etcd-servers=https://10.0.0.181:2379,https://10.0.0.182:2379,https://10.0.0.183:2379 \
+    --etcd-cafile=/k8s/etcd/ssl/ca.pem \
+    --etcd-certfile=/k8s/etcd/ssl/etcd.pem \
+    --etcd-keyfile=/k8s/etcd/ssl/etcd-key.pem \
+    --service-cluster-ip-range=10.254.0.0/16 \
+    --service-node-port-range=30000-50000 \
+    --service-account-issuer=https://kubernetes.default.svc.cluster.local \
+    --service-account-key-file=/k8s/kubernetes/ssl/sa.pub \
+    --service-account-signing-key-file=/k8s/kubernetes/ssl/sa.key \
+    --proxy-client-cert-file=/k8s/kubernetes/ssl/front-proxy-client.pem \
+    --proxy-client-key-file=/k8s/kubernetes/ssl/front-proxy-client-key.pem \
+    --requestheader-allowed-names=front-proxy-client \
+    --requestheader-client-ca-file=/k8s/kubernetes/ssl/front-proxy-ca.pem \
+    --requestheader-extra-headers-prefix=X-Remote-Extra- \
+    --requestheader-group-headers=X-Remote-Group \
+    --requestheader-username-headers=X-Remote-User \
+    --logtostderr=true \
+    --v=2"
+```
+```shell
+root@master-3:~# vi /k8s/kubernetes/cfg/kube-apiserver
+KUBE_APISERVER_ARGS=" \
+    --advertise-address=10.0.0.183 \
+    --allow-privileged=true \
+    --authorization-mode=Node,RBAC \
+    --enable-admission-plugins=NodeRestriction \
+    --anonymous-auth=false \
+    --bind-address=0.0.0.0 \
+    --secure-port=6443 \
+    --enable-bootstrap-token-auth \
+    --token-auth-file=/k8s/kubernetes/cfg/token.csv \
+    --client-ca-file=/k8s/kubernetes/ssl/ca.pem \
+    --tls-cert-file=/k8s/kubernetes/ssl/kube-apiserver.pem \
+    --tls-private-key-file=/k8s/kubernetes/ssl/kube-apiserver-key.pem \
+    --etcd-servers=https://10.0.0.181:2379,https://10.0.0.182:2379,https://10.0.0.183:2379 \
+    --etcd-cafile=/k8s/etcd/ssl/ca.pem \
+    --etcd-certfile=/k8s/etcd/ssl/etcd.pem \
+    --etcd-keyfile=/k8s/etcd/ssl/etcd-key.pem \
+    --service-cluster-ip-range=10.254.0.0/16 \
+    --service-node-port-range=30000-50000 \
+    --service-account-issuer=https://kubernetes.default.svc.cluster.local \
+    --service-account-key-file=/k8s/kubernetes/ssl/sa.pub \
+    --service-account-signing-key-file=/k8s/kubernetes/ssl/sa.key \
+    --proxy-client-cert-file=/k8s/kubernetes/ssl/front-proxy-client.pem \
+    --proxy-client-key-file=/k8s/kubernetes/ssl/front-proxy-client-key.pem \
+    --requestheader-allowed-names=front-proxy-client \
+    --requestheader-client-ca-file=/k8s/kubernetes/ssl/front-proxy-ca.pem \
+    --requestheader-extra-headers-prefix=X-Remote-Extra- \
+    --requestheader-group-headers=X-Remote-Group \
+    --requestheader-username-headers=X-Remote-User \
+    --logtostderr=true \
+    --v=2"
+```
+
+#### 7、启动kube-apiserver：
+```shell
+root@master-1:~# systemctl start kube-apiserver && systemctl enable kube-apiserver
+root@master-1:~# ssh root@10.0.0.182 'systemctl start kube-apiserver && systemctl enable kube-apiserver'
+root@master-1:~# ssh root@10.0.0.183 'systemctl start kube-apiserver && systemctl enable kube-apiserver'
+```
+
+#### 8、启动kube-controller-manager、kube-scheduler：
+```shell
+root@master-1:~# systemctl start kube-controller-manager kube-scheduler && systemctl enable kube-controller-manager kube-scheduler
+root@master-1:~# ssh root@10.0.0.182 'systemctl start kube-controller-manager kube-scheduler && systemctl enable kube-controller-manager kube-scheduler'
+root@master-1:~# ssh root@10.0.0.183 'systemctl start kube-controller-manager kube-scheduler && systemctl enable kube-controller-manager kube-scheduler'
+```
+
+#### 9、添加kubernetes可执行程序路径（master-2、master-3也需要）：
+```shell
+root@master-1:~# echo 'PATH=$PATH:/k8s/kubernetes/bin' >> /etc/profile
+root@master-1:~# . /etc/profile
+```
+
+#### 10、生成集群管理员配置（master-2、master-3也需要）：
+```shell
+root@master-1:~# mkdir -p ~/.kube
+root@master-1:~# cp /k8s/kubernetes/cfg/admin.kubeconfig ~/.kube/config
+```
+
+#### 11、查看集群各组件状态：
+```shell
+root@master-1:~# kubectl get cs
+Warning: v1 ComponentStatus is deprecated in v1.19+
+NAME                 STATUS    MESSAGE             ERROR
+controller-manager   Healthy   ok                  
+scheduler            Healthy   ok                  
+etcd-2               Healthy   {"health":"true"}   
+etcd-0               Healthy   {"health":"true"}   
+etcd-1               Healthy   {"health":"true"}   
+```
+
+#### 12、kubelet-bootstrap账号授权
+```shell
+root@master-1:~# kubectl create clusterrolebinding kubelet-bootstrap --clusterrole=system:node-bootstrapper --user=kubelet-bootstrap
+clusterrolebinding.rbac.authorization.k8s.io/kubelet-bootstrap created
+```
+
 
 
