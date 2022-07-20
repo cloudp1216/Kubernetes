@@ -562,11 +562,11 @@ root@master-1:~# cp /k8s/kubernetes/cfg/admin.kubeconfig ~/.kube/config
 root@master-1:~# kubectl get cs
 Warning: v1 ComponentStatus is deprecated in v1.19+
 NAME                 STATUS    MESSAGE             ERROR
-controller-manager   Healthy   ok                  
 scheduler            Healthy   ok                  
-etcd-2               Healthy   {"health":"true"}   
+controller-manager   Healthy   ok                  
 etcd-0               Healthy   {"health":"true"}   
 etcd-1               Healthy   {"health":"true"}   
+etcd-2               Healthy   {"health":"true"}   
 ```
 
 #### 12、kubelet-bootstrap账号授权：
