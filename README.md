@@ -34,13 +34,15 @@ https://github.com/etcd-io/etcd/releases/download/v3.4.18/etcd-v3.4.18-linux-amd
 ```
 
 #### 3、软件包下载地址：
-https://pan.baidu.com
+链接: https://pan.baidu.com/s/1i1KOWIPpgS2qfGloXkXaBw 
+提取码: 64uk 
 
-#### 4、基础环境配置(略)：
+
+#### 4、基础环境配置：
 - 配置时间同步
 - 配置master-1到master-2、master-3免密登录
 - 关闭unattended-upgrades.service自动更新服务
-- 提前安装部署Harbor(当前Harbor使用：hub.speech.local)
+- 提前安装部署Harbor(当前Harbor解析域名为：hub.speech.local)
 - 添加各节点dns解析或调整本地host文件：
 ```shell
 root@master-1:~# vi /etc/hosts
@@ -68,8 +70,6 @@ root@master-1:~/k8s-v1.23.9/docker-ce-v20.10.12# systemctl restart docker
 ## 二、部署etcd集群
 #### 1、分别在master-1、master-2、master-3中安装etcd：
 ```shell
-root@master-1:~# ls
-k8s-v1.23.9.tar.gz
 root@master-1:~# tar zxf k8s-v1.23.9.tar.gz 
 root@master-1:~# cd k8s-v1.23.9/pkgs/
 root@master-1:~/k8s-v1.23.9/pkgs# dpkg -i k8s-etcd-3.4.18+bionic_amd64.deb 
@@ -78,6 +78,79 @@ Selecting previously unselected package k8s-etcd.
 Preparing to unpack k8s-etcd-3.4.18+bionic_amd64.deb ...
 Unpacking k8s-etcd (3.4.18+bionic) ...
 Setting up k8s-etcd (3.4.18+bionic) ...
+```
+
+#### 2、在master-1节点初始化etcd证书(注意双下滑线开头结尾项需要调整)：
+```shell
+root@master-1:~# cd /k8s/etcd/ssl/cfssl-tools
+root@master-1:/k8s/etcd/ssl/cfssl-tools# vi etcd-csr.json
+{
+    "CN": "etcd",
+    "hosts": [
+        "10.0.0.181",
+        "10.0.0.182",
+        "10.0.0.183",
+        "127.0.0.1",
+        "localhost"
+    ],
+    "key": {
+        "algo": "rsa",
+        "size": 2048
+    },
+    "names": [
+        {
+            "C": "CN",
+            "ST": "BeiJing",
+            "L": "BeiJing",
+            "O": "etcd",
+            "OU": "System"
+        }
+    ]
+}
+root@master-1:/k8s/etcd/ssl/cfssl-tools# vi peer-csr.json
+{
+    "CN": "peer",
+    "hosts": [
+        "10.0.0.181",
+        "10.0.0.182",
+        "10.0.0.183",
+        "127.0.0.1",
+        "localhost"
+    ],
+    "key": {
+        "algo": "rsa",
+        "size": 2048
+    },
+    "names": [
+        {
+            "C": "CN",
+            "ST": "BeiJing",
+            "L": "BeiJing",
+            "O": "etcd",
+            "OU": "System"
+        }
+    ]
+}
+root@master-1:/k8s/etcd/ssl/cfssl-tools# ./init-certs.sh 
+Init Etcd Certs OK.
+root@master-1:/k8s/etcd/ssl/cfssl-tools# ls -lh ../
+total 40K
+-rw-r--r-- 1 root root 1.1K Jul 20 14:11 ca.csr
+-rw------- 1 root root 1.7K Jul 20 14:11 ca-key.pem
+-rw-r--r-- 1 root root 1.3K Jul 20 14:11 ca.pem
+drwxr-xr-x 2 root root 4.0K Jul 20 14:11 cfssl-tools
+-rw-r--r-- 1 root root 1.1K Jul 20 14:11 etcd.csr
+-rw------- 1 root root 1.7K Jul 20 14:11 etcd-key.pem
+-rw-r--r-- 1 root root 1.4K Jul 20 14:11 etcd.pem
+-rw-r--r-- 1 root root 1.1K Jul 20 14:11 peer.csr
+-rw------- 1 root root 1.7K Jul 20 14:11 peer-key.pem
+-rw-r--r-- 1 root root 1.5K Jul 20 14:11 peer.pem
+```
+
+#### 3、分发etcd证书到master-2、master-3节点：
+```shell
+root@master-1:/k8s/etcd# scp -r ssl root@10.0.0.182:/k8s/etcd
+root@master-1:/k8s/etcd# scp -r ssl root@10.0.0.183:/k8s/etcd
 ```
 
 
