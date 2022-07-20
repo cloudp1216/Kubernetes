@@ -192,7 +192,6 @@ ETCD_PEER_TRUSTED_CA_FILE="/k8s/etcd/ssl/ca.pem"
 ETCD_PEER_CERT_FILE="/k8s/etcd/ssl/peer.pem"
 ETCD_PEER_KEY_FILE="/k8s/etcd/ssl/peer-key.pem"
 ```
-
 ```shell
 root@master-2:~# cd /k8s/etcd/cfg/
 root@master-2:/k8s/etcd/cfg# ln -svf etcd.cluster etcd
@@ -225,7 +224,6 @@ ETCD_PEER_TRUSTED_CA_FILE="/k8s/etcd/ssl/ca.pem"
 ETCD_PEER_CERT_FILE="/k8s/etcd/ssl/peer.pem"
 ETCD_PEER_KEY_FILE="/k8s/etcd/ssl/peer-key.pem"
 ```
-
 ```shell
 root@master-3:~# cd /k8s/etcd/cfg/
 root@master-3:/k8s/etcd/cfg# ln -svf etcd.cluster etcd
@@ -560,11 +558,144 @@ etcd-0               Healthy   {"health":"true"}
 etcd-1               Healthy   {"health":"true"}   
 ```
 
-#### 12、kubelet-bootstrap账号授权
+#### 12、kubelet-bootstrap账号授权：
 ```shell
 root@master-1:~# kubectl create clusterrolebinding kubelet-bootstrap --clusterrole=system:node-bootstrapper --user=kubelet-bootstrap
 clusterrolebinding.rbac.authorization.k8s.io/kubelet-bootstrap created
 ```
+
+
+## 四、添加master节点到集群
+#### 1、调整kubelet配置文件（master-2、master-3也需要调整）：
+```shell
+root@master-1:~# vi /k8s/kubernetes/cfg/kubelet
+KUBELET_ARGS=" \
+    --bootstrap-kubeconfig=/k8s/kubernetes/cfg/bootstrap.kubeconfig \
+    --kubeconfig=/k8s/kubernetes/cfg/kubelet.kubeconfig \
+    --cgroup-driver=systemd \
+    --kubelet-cgroups=/systemd/system.slice \
+    --runtime-cgroups=/systemd/system.slice \
+    --network-plugin=cni \
+    --cluster-dns=10.254.0.2 \
+    --cluster-domain=cluster.local \
+    --fail-swap-on=false \
+    --cert-dir=/k8s/kubernetes/ssl \
+    --hairpin-mode=promiscuous-bridge \
+    --serialize-image-pulls=false \
+    --pod-infra-container-image=hub.speech.local/k8s.gcr.io/pause:3.6 \     # 注意此项，pause镜像要提前推送到本地镜像仓库
+    --logtostderr=true \
+    --v=2"
+```
+
+#### 2、启动kubelet、kube-proxy：
+```shell
+root@master-1:~# systemctl start kubelet kube-proxy && systemctl enable kubelet kube-proxy
+root@master-1:~# ssh root@10.0.0.182 'systemctl start kubelet kube-proxy && systemctl enable kubelet kube-proxy'
+root@master-1:~# ssh root@10.0.0.183 'systemctl start kubelet kube-proxy && systemctl enable kubelet kube-proxy'
+```
+
+#### 3、允许master节点加入集群：
+```shell
+root@master-1:~# kubectl get csr
+NAME                                                   AGE   SIGNERNAME                                    REQUESTOR           REQUESTEDDURATION   CONDITION
+node-csr-PNk547vpMHuA-q0rhNCUdrV4KFUh2n5BVPoHPigRGW4   30s   kubernetes.io/kube-apiserver-client-kubelet   kubelet-bootstrap   <none>              Pending
+node-csr-aDTDGOPPvkExkqtwjwTwMCMW_sJIYAoJZPGlupysvmg   93s   kubernetes.io/kube-apiserver-client-kubelet   kubelet-bootstrap   <none>              Pending
+node-csr-t5ZhqKD6bjot4WSbvbmyYrD520Ba4CpX2gGO-Me9KFo   26s   kubernetes.io/kube-apiserver-client-kubelet   kubelet-bootstrap   <none>              Pending
+root@master-1:~# kubectl certificate approve node-csr-PNk547vpMHuA-q0rhNCUdrV4KFUh2n5BVPoHPigRGW4
+certificatesigningrequest.certificates.k8s.io/node-csr-PNk547vpMHuA-q0rhNCUdrV4KFUh2n5BVPoHPigRGW4 approved
+root@master-1:~# kubectl certificate approve node-csr-aDTDGOPPvkExkqtwjwTwMCMW_sJIYAoJZPGlupysvmg
+certificatesigningrequest.certificates.k8s.io/node-csr-aDTDGOPPvkExkqtwjwTwMCMW_sJIYAoJZPGlupysvmg approved
+root@master-1:~# kubectl certificate approve node-csr-t5ZhqKD6bjot4WSbvbmyYrD520Ba4CpX2gGO-Me9KFo
+certificatesigningrequest.certificates.k8s.io/node-csr-t5ZhqKD6bjot4WSbvbmyYrD520Ba4CpX2gGO-Me9KFo approved
+```
+
+#### 4、查看节点（NotReady是因为未部署网络插件）：
+```shell
+root@master-1:~# kubectl get node -o wide
+NAME       STATUS     ROLES    AGE   VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION       CONTAINER-RUNTIME
+master-1   NotReady   <none>   81s   v1.23.9   10.0.0.181    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
+master-2   NotReady   <none>   93s   v1.23.9   10.0.0.182    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
+master-3   NotReady   <none>   69s   v1.23.9   10.0.0.183    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
+```
+
+
+## 五、部署网络插件Calico
+#### 1、调整calico镜像仓库地址
+```shell
+root@master-1:~# cd k8s-v1.23.9/calico-v3.22.3
+root@master-1:~# cat calico.yaml | grep image -n
+235:          image: docker.io/calico/cni:v3.22.3
+279:          image: docker.io/calico/pod2daemon-flexvol:v3.22.3
+290:          image: docker.io/calico/node:v3.22.3
+535:          image: docker.io/calico/kube-controllers:v3.22.3
+root@master-1:~/k8s-v1.23.9/calico-v3.22.3# vi calico.yaml                # 将镜像调整为以下（镜像要提前推送到本地镜像仓库）：              
+235:          image: hub.speech.local/calico/cni:v3.22.3
+279:          image: hub.speech.local/calico/pod2daemon-flexvol:v3.22.3
+290:          image: hub.speech.local/calico/node:v3.22.3
+535:          image: hub.speech.local/calico/kube-controllers:v3.22.3
+```
+
+#### 2、设置etcd集群地址
+```shell
+root@master-1:~/k8s-v1.23.9/calico-v3.22.3# ETCD_ENDPOINTS="https://10.0.0.181:2379,https://10.0.0.182:2379,https://10.0.0.183:2379"
+root@master-1:~/k8s-v1.23.9/calico-v3.22.3# sed -i "s#.*etcd_endpoints:.*#  etcd_endpoints: \"${ETCD_ENDPOINTS}\"#g" calico.yaml
+```
+
+#### 3、设置etcd证书
+```shell
+root@master-1:~/k8s-v1.23.9/calico-v3.22.3# ETCD_CA=`cat /k8s/etcd/ssl/ca.pem | base64 | tr -d '\n'`
+root@master-1:~/k8s-v1.23.9/calico-v3.22.3# ETCD_CERT=`cat /k8s/etcd/ssl/etcd.pem | base64 | tr -d '\n'`
+root@master-1:~/k8s-v1.23.9/calico-v3.22.3# ETCD_KEY=`cat /k8s/etcd/ssl/etcd-key.pem | base64 | tr -d '\n'`
+root@master-1:~/k8s-v1.23.9/calico-v3.22.3# sed -i "s#.*etcd-ca:.*#  etcd-ca: ${ETCD_CA}#g" calico.yaml
+root@master-1:~/k8s-v1.23.9/calico-v3.22.3# sed -i "s#.*etcd-cert:.*#  etcd-cert: ${ETCD_CERT}#g" calico.yaml
+root@master-1:~/k8s-v1.23.9/calico-v3.22.3# sed -i "s#.*etcd-key:.*#  etcd-key: ${ETCD_KEY}#g" calico.yaml
+root@master-1:~/k8s-v1.23.9/calico-v3.22.3# sed -i 's#.*etcd_ca:.*#  etcd_ca: "/calico-secrets/etcd-ca"#g' calico.yaml
+root@master-1:~/k8s-v1.23.9/calico-v3.22.3# sed -i 's#.*etcd_cert:.*#  etcd_cert: "/calico-secrets/etcd-cert"#g' calico.yaml
+root@master-1:~/k8s-v1.23.9/calico-v3.22.3# sed -i 's#.*etcd_key:.*#  etcd_key: "/calico-secrets/etcd-key"#g' calico.yaml
+```
+
+#### 4、设置Pod地址池（注意要和kube-proxy配置项--cluster-cidr地址池一致）
+```shell
+root@master-1:~/k8s-v1.23.9/calico-v3.22.3# CALICO_IPV4POOL_CIDR="10.244.0.0/16"
+root@master-1:~/k8s-v1.23.9/calico-v3.22.3# sed -i "s#192.168.0.0/16#${CALICO_IPV4POOL_CIDR}#g" calico.yaml
+```
+
+#### 5、创建calico资源
+```shell
+root@master-1:~/k8s-v1.23.9/calico-v3.22.3# kubectl apply -f calico.yaml
+secret/calico-etcd-secrets created
+configmap/calico-config created
+clusterrole.rbac.authorization.k8s.io/calico-kube-controllers created
+clusterrolebinding.rbac.authorization.k8s.io/calico-kube-controllers created
+clusterrole.rbac.authorization.k8s.io/calico-node created
+clusterrolebinding.rbac.authorization.k8s.io/calico-node created
+daemonset.apps/calico-node created
+serviceaccount/calico-node created
+deployment.apps/calico-kube-controllers created
+serviceaccount/calico-kube-controllers created
+poddisruptionbudget.policy/calico-kube-controllers created
+```
+
+#### 6、查看pod
+```shell
+root@master-1:~# kubectl get pods -A -o wide
+NAMESPACE     NAME                                       READY   STATUS    RESTARTS   AGE    IP           NODE       NOMINATED NODE   READINESS GATES
+kube-system   calico-kube-controllers-867987dd7c-9zr9f   1/1     Running   0          2m6s   10.0.0.182   master-2   <none>           <none>
+kube-system   calico-node-4qnm5                          1/1     Running   0          2m6s   10.0.0.182   master-2   <none>           <none>
+kube-system   calico-node-9vbc8                          1/1     Running   0          2m6s   10.0.0.183   master-3   <none>           <none>
+kube-system   calico-node-d92c8                          1/1     Running   0          2m6s   10.0.0.181   master-1   <none>           <none>
+```
+
+#### 7、再次查看node
+```shell
+root@master-1:~# kubectl get node -o wide
+NAME       STATUS   ROLES    AGE   VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION       CONTAINER-RUNTIME
+master-1   Ready    <none>   22m   v1.23.9   10.0.0.181    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
+master-2   Ready    <none>   22m   v1.23.9   10.0.0.182    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
+master-3   Ready    <none>   22m   v1.23.9   10.0.0.183    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
+```
+
+
 
 
 
