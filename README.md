@@ -44,7 +44,7 @@ https://github.com/etcd-io/etcd/releases/download/v3.4.18/etcd-v3.4.18-linux-amd
 - 关闭unattended-upgrades.service自动更新服务
 - 提前安装ipvsadm、ipset
 - 提前安装部署Harbor（当前Harbor域名解析为：hub.speech.local）
-- 添加各节点DNS解析或调整本地hosts文件：
+- 添加各节点DNS解析或调整本地hosts文件（各个节点都需要）：
 ```shell
 root@master-1:~# vi /etc/hosts
 10.0.0.181      master-1 etcd-1
@@ -155,13 +155,14 @@ drwxr-xr-x 2 root root 4.0K Jul 20 14:11 cfssl-tools
 
 #### 3、分发etcd证书到etcd-2、etcd-3节点：
 ```shell
+root@master-1:~# cd /k8s/etcd
 root@master-1:/k8s/etcd# scp -r ssl root@10.0.0.182:/k8s/etcd
 root@master-1:/k8s/etcd# scp -r ssl root@10.0.0.183:/k8s/etcd
 ```
 
 #### 4、分别调整etcd-1、etcd-2、etcd-3配置文件：
 ```shell
-root@master-1:~# cd /k8s/etcd/cfg/
+root@master-1:~# cd /k8s/etcd/cfg
 root@master-1:/k8s/etcd/cfg# ln -svf etcd.cluster etcd    # 注意etcd默认为单实例配置，这里调整为集群配置
 'etcd' -> 'etcd.cluster'
 root@master-1:/k8s/etcd/cfg# vi etcd                      # 注意所有双下滑杠开头结尾的配置项都需要调整，ETCD_ARGS和ETCD_DATA_DIR变量值建议调整和节点一致
@@ -193,7 +194,7 @@ ETCD_PEER_CERT_FILE="/k8s/etcd/ssl/peer.pem"
 ETCD_PEER_KEY_FILE="/k8s/etcd/ssl/peer-key.pem"
 ```
 ```shell
-root@master-2:~# cd /k8s/etcd/cfg/
+root@master-2:~# cd /k8s/etcd/cfg
 root@master-2:/k8s/etcd/cfg# ln -svf etcd.cluster etcd
 'etcd' -> 'etcd.cluster'
 root@master-2:/k8s/etcd/cfg# vi etcd
@@ -225,7 +226,7 @@ ETCD_PEER_CERT_FILE="/k8s/etcd/ssl/peer.pem"
 ETCD_PEER_KEY_FILE="/k8s/etcd/ssl/peer-key.pem"
 ```
 ```shell
-root@master-3:~# cd /k8s/etcd/cfg/
+root@master-3:~# cd /k8s/etcd/cfg
 root@master-3:/k8s/etcd/cfg# ln -svf etcd.cluster etcd
 'etcd' -> 'etcd.cluster'
 root@master-3:/k8s/etcd/cfg# vi etcd
