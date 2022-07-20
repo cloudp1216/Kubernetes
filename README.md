@@ -741,7 +741,7 @@ kube-system   coredns-54d7c66b75-jwq8j                   1/1     Running   0    
 ```
 
 
-## 七、添加master污点
+## 七、给master添加污点
 1、master作为集群控制平面一般不会运行负载：
 ```shell
 root@master-1:~# kubectl taint node master-1 node-role.kubernetes.io/master:NoSchedule
@@ -750,6 +750,32 @@ root@master-1:~# kubectl taint node master-2 node-role.kubernetes.io/master:NoSc
 node/master-2 tainted
 root@master-1:~# kubectl taint node master-3 node-role.kubernetes.io/master:NoSchedule
 node/master-3 tainted
+```
+
+
+## 八、重启master-1、master-2、master-3
+1、重启后集群会自动调整service为ipvs（取决于deb包中自动加载的内核模块）：
+```shell
+root@master-1:~# dpkg -c k8s-v1.23.9/pkgs/k8s-kubernetes-node-1.23.9+bionic_amd64.deb | grep k8s.conf
+-rw-r--r-- root/root        28 2022-07-18 16:54 ./etc/modules-load.d/k8s.conf
+-rw-r--r-- root/root       103 2022-07-18 16:54 ./etc/sysctl.d/k8s.conf
+root@master-1:~# ipvsadm -ln
+IP Virtual Server version 1.2.1 (size=4096)
+Prot LocalAddress:Port Scheduler Flags
+  -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
+TCP  10.254.0.1:443 lc
+  -> 10.0.0.181:6443              Masq    1      1          0         
+  -> 10.0.0.182:6443              Masq    1      1          0         
+  -> 10.0.0.183:6443              Masq    1      1          0         
+TCP  10.254.0.2:53 lc
+  -> 10.244.65.1:53               Masq    1      0          0         
+  -> 10.244.218.1:53              Masq    1      0          0         
+TCP  10.254.0.2:9153 lc
+  -> 10.244.65.1:9153             Masq    1      0          0         
+  -> 10.244.218.1:9153            Masq    1      0          0         
+UDP  10.254.0.2:53 lc
+  -> 10.244.65.1:53               Masq    1      0          0         
+  -> 10.244.218.1:53              Masq    1      0          0        
 ```
 
 
