@@ -298,7 +298,7 @@ root@master-1:~/k8s-v1.23.9/pkgs# ssh root@10.0.0.183 'cd /root && dpkg -i k8s-k
 
 #### 2、在master-1节点初始化kubernetes集群证书：
 ```shell
-root@master-1:~# cd /k8s/kubernetes/ssl/cfssl-tools/
+root@master-1:~# cd /k8s/kubernetes/ssl/cfssl-tools
 root@master-1:/k8s/kubernetes/ssl/cfssl-tools# vi kube-apiserver-csr.json  # 注意双下滑杠开头结尾的配置项需要调整
 {
     "CN": "kubernetes",
@@ -413,6 +413,7 @@ drwxr-xr-x 2 root root 4.0K Jul 20 15:08 init-kubeconfig
 
 #### 5、分发token.svc、kubeconfig配置文件到master-2、master-3节点：
 ```shell
+root@master-1:~# cd /k8s/kubernetes
 root@master-1:/k8s/kubernetes# scp -r cfg root@10.0.0.182:/k8s/kubernetes
 root@master-1:/k8s/kubernetes# scp -r cfg root@10.0.0.183:/k8s/kubernetes
 ```
