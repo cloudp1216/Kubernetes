@@ -33,4 +33,51 @@ https://nginx.org/download/nginx-1.16.1.tar.gz
 https://github.com/etcd-io/etcd/releases/download/v3.4.18/etcd-v3.4.18-linux-amd64.tar.gz
 ```
 
+#### 3、软件包下载地址：
+https://pan.baidu.com
+
+#### 4、基础环境配置(略)：
+- 配置时间同步
+- 配置master-1到master-2、master-3免密登录
+- 关闭unattended-upgrades.service自动更新服务
+- 提前安装部署Harbor(当前Harbor使用：hub.speech.local)
+- 添加各节点dns解析或调整本地host文件：
+```shell
+root@master-1:~# vi /etc/hosts
+10.0.0.181      master-1 etcd-1
+10.0.0.182      master-2 etcd-2
+10.0.0.183      master-3 etcd-3
+10.0.0.184      node-1
+10.0.0.185      node-2
+10.0.0.186      node-3
+```
+- 安装配置Docker(各个节点都需要)：
+```shell
+root@master-1:~# tar zxf k8s-v1.23.9.tar.gz
+root@master-1:~# cd k8s-v1.23.9/docker-ce-v20.10.12/
+root@master-1:~/k8s-v1.23.9/docker-ce-v20.10.12# dpkg -i *.deb
+root@master-1:~/k8s-v1.23.9/docker-ce-v20.10.12# vi /etc/docker/daemon.json
+{
+    "exec-opts": ["native.cgroupdriver=systemd"],
+    "insecure-registries": ["hub.speech.local"]
+}
+root@master-1:~/k8s-v1.23.9/docker-ce-v20.10.12# systemctl restart docker
+```
+
+
+## 二、部署etcd集群
+#### 1、分别在master-1、master-2、master-3中安装etcd：
+```shell
+root@master-1:~# ls
+k8s-v1.23.9.tar.gz
+root@master-1:~# tar zxf k8s-v1.23.9.tar.gz 
+root@master-1:~# cd k8s-v1.23.9/pkgs/
+root@master-1:~/k8s-v1.23.9/pkgs# dpkg -i k8s-etcd-3.4.18+bionic_amd64.deb 
+Selecting previously unselected package k8s-etcd.
+(Reading database ... 66889 files and directories currently installed.)
+Preparing to unpack k8s-etcd-3.4.18+bionic_amd64.deb ...
+Unpacking k8s-etcd (3.4.18+bionic) ...
+Setting up k8s-etcd (3.4.18+bionic) ...
+```
+
 
