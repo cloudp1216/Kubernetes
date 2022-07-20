@@ -11,8 +11,10 @@
 |5   |10.0.0.185  |node-2           |Ubuntu 18.04.6 LTS  | 
 |6   |10.0.0.186  |node-3           |Ubuntu 18.04.6 LTS  |
 
+
 #### 2、软件包及相关信息：
 ```shell
+包信息：
 k8s-v1.23.9/pkgs/k8s-etcd-3.4.18+bionic_amd64.deb                 # 持久状态存储etcd
 k8s-v1.23.9/pkgs/k8s-kubernetes-master-1.23.9+bionic_amd64.deb    # master核心组件（kube-apiserver、kube-controller-manager、kube-scheduler）
 k8s-v1.23.9/pkgs/k8s-kubernetes-node-1.23.9+bionic_amd64.deb      # node核心组件（kubelet、kube-proxy）
@@ -24,6 +26,13 @@ k8s-v1.23.9/docker-ce-v20.10.12                                   # 容器服务
 k8s-v1.23.9/metrics-server-v0.6.1                                 # 核心指标监控metrics-server
 
 
+默认配置：
+Pod地址池：10.244.0.0/16
+Service地址池：10.254.0.0/16
+Service模型：ipvs（调度算法默认采用lc）
+Service端口范围: 30000-50000
+
+
 注意：
 k8s-etcd、k8s-kubernetes-master、k8s-kubernetes-node包中二进制程序由官方下载，此处仅做了二次封装，k8s-slb由nginx-1.16.1.tar.gz源码编译，未更改过任何源代码：
 https://dl.k8s.io/v1.23.9/kubernetes-server-linux-amd64.tar.gz
@@ -33,12 +42,12 @@ https://nginx.org/download/nginx-1.16.1.tar.gz
 https://github.com/etcd-io/etcd/releases/download/v3.4.18/etcd-v3.4.18-linux-amd64.tar.gz
 ```
 
-#### 3、软件包下载地址：
+#### 4、软件包下载地址：
 链接: https://pan.baidu.com/s/1i1KOWIPpgS2qfGloXkXaBw </p>
 提取码: 64uk 
 
 
-#### 4、基础环境配置：
+#### 5、基础环境配置：
 - 配置时间同步
 - 配置master-1到master-2、master-3免密登录
 - 关闭unattended-upgrades.service自动更新服务
