@@ -34,7 +34,7 @@ https://github.com/etcd-io/etcd/releases/download/v3.4.18/etcd-v3.4.18-linux-amd
 ```
 
 #### 3、软件包下载地址：
-链&emsp;接: https://pan.baidu.com/s/1i1KOWIPpgS2qfGloXkXaBw </p>
+链接: https://pan.baidu.com/s/1i1KOWIPpgS2qfGloXkXaBw </p>
 提取码: 64uk 
 
 
