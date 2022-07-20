@@ -68,7 +68,7 @@ root@master-1:~/k8s-v1.23.9/docker-ce-v20.10.12# systemctl restart docker
 
 
 ## 二、部署etcd集群
-#### 1、分别在etcd-1、etcd-2、etcd-3节点安装etcd：
+#### 1、分别在etcd-1、etcd-2、etcd-3节点安装k8s-etcd-3.4.18+bionic_amd64.deb组件：
 ```shell
 root@master-1:~# cd k8s-v1.23.9/pkgs/
 root@master-1:~/k8s-v1.23.9/pkgs# dpkg -i k8s-etcd-3.4.18+bionic_amd64.deb 
@@ -77,8 +77,12 @@ Selecting previously unselected package k8s-etcd.
 Preparing to unpack k8s-etcd-3.4.18+bionic_amd64.deb ...
 Unpacking k8s-etcd (3.4.18+bionic) ...
 Setting up k8s-etcd (3.4.18+bionic) ...
+```
+```shell
 root@master-1:~/k8s-v1.23.9/pkgs# scp k8s-etcd-3.4.18+bionic_amd64.deb root@10.0.0.182:/root
 root@master-1:~/k8s-v1.23.9/pkgs# scp k8s-etcd-3.4.18+bionic_amd64.deb root@10.0.0.183:/root
+root@master-1:~/k8s-v1.23.9/pkgs# ssh root@10.0.0.182 'cd /root && dpkg -i k8s-etcd-3.4.18+bionic_amd64.deb'
+root@master-1:~/k8s-v1.23.9/pkgs# ssh root@10.0.0.183 'cd /root && dpkg -i k8s-etcd-3.4.18+bionic_amd64.deb'
 ```
 
 #### 2、在etcd-1节点初始化etcd证书（注意双下滑线开头结尾项需要调整）：
@@ -254,12 +258,109 @@ ETCD_PEER_CERT_FILE="/k8s/etcd/ssl/peer.pem"
 ETCD_PEER_KEY_FILE="/k8s/etcd/ssl/peer-key.pem"
 ```
 
-#### 5、分别在etcd-1、etcd-2、etcd-3节点启动etcd
+#### 5、分别在etcd-1、etcd-2、etcd-3节点启动etcd：
 ```shell
 root@master-1:~# systemctl start etcd && systemctl enable etcd
 root@master-1:~# ssh root@10.0.0.182 'systemctl start etcd && systemctl enable etcd'
 root@master-1:~# ssh root@10.0.0.183 'systemctl start etcd && systemctl enable etcd'
 ```
+```shell
+root@master-1:~# ps -ef | grep -v grep | grep etcd
+root      6371     1  2 14:50 ?        00:00:12 /k8s/etcd/bin/etcd --name=etcd-1
+root@master-1:~# ssh root@10.0.0.182 'ps -ef | grep -v grep | grep etcd'
+root      6115     1  2 14:50 ?        00:00:11 /k8s/etcd/bin/etcd --name=etcd-2
+root@master-1:~# ssh root@10.0.0.183 'ps -ef | grep -v grep | grep etcd'
+root      5824     1  2 14:50 ?        00:00:11 /k8s/etcd/bin/etcd --name=etcd-3
+```
 
+
+## 三、部署Kubernetes集群
+#### 1、分别在master-1、master-2、master-3上安装k8s-kubernetes-master-1.23.9+bionic_amd64.deb与k8s-kubernetes-node-1.23.9+bionic_amd64.deb组件：
+```shell
+root@master-1:~# cd k8s-v1.23.9/pkgs/
+root@master-1:~/k8s-v1.23.9/pkgs# dpkg -i k8s-kubernetes-master-1.23.9+bionic_amd64.deb k8s-kubernetes-node-1.23.9+bionic_amd64.deb 
+Selecting previously unselected package k8s-kubernetes-master.
+(Reading database ... 67136 files and directories currently installed.)
+Preparing to unpack k8s-kubernetes-master-1.23.9+bionic_amd64.deb ...
+Unpacking k8s-kubernetes-master (1.23.9+bionic) ...
+Selecting previously unselected package k8s-kubernetes-node.
+Preparing to unpack k8s-kubernetes-node-1.23.9+bionic_amd64.deb ...
+Unpacking k8s-kubernetes-node (1.23.9+bionic) ...
+Setting up k8s-kubernetes-master (1.23.9+bionic) ...
+Setting up k8s-kubernetes-node (1.23.9+bionic) ...
+```
+```shell
+root@master-1:~/k8s-v1.23.9/pkgs# scp k8s-kubernetes-master-1.23.9+bionic_amd64.deb k8s-kubernetes-node-1.23.9+bionic_amd64.deb root@10.0.0.182:/root
+root@master-1:~/k8s-v1.23.9/pkgs# scp k8s-kubernetes-master-1.23.9+bionic_amd64.deb k8s-kubernetes-node-1.23.9+bionic_amd64.deb root@10.0.0.183:/root
+root@master-1:~/k8s-v1.23.9/pkgs# ssh root@10.0.0.182 'cd /root && dpkg -i k8s-kubernetes-master-1.23.9+bionic_amd64.deb k8s-kubernetes-node-1.23.9+bionic_amd64.deb'
+root@master-1:~/k8s-v1.23.9/pkgs# ssh root@10.0.0.183 'cd /root && dpkg -i k8s-kubernetes-master-1.23.9+bionic_amd64.deb k8s-kubernetes-node-1.23.9+bionic_amd64.deb'
+```
+
+#### 2、在master-1节点初始化kubernetes集群证书：
+```shell
+root@master-1:~# cd /k8s/kubernetes/ssl/cfssl-tools/
+root@master-1:/k8s/kubernetes/ssl/cfssl-tools# vi kube-apiserver-csr.json  # 注意双下滑杠开头结尾的配置项需要调整
+{
+    "CN": "kubernetes",
+    "hosts": [
+        "10.0.0.181",
+        "10.0.0.182",
+        "10.0.0.183",
+        "10.254.0.1",
+        "127.0.0.1",
+        "localhost",
+        "kubernetes",
+        "kubernetes.default",
+        "kubernetes.default.svc",
+        "kubernetes.default.svc.cluster",
+        "kubernetes.default.svc.cluster.local"
+    ],
+    "key": {
+        "algo": "rsa",
+        "size": 2048
+    },
+    "names": [
+        {
+            "C": "CN",
+            "ST": "BeiJing",
+            "L": "BeiJing",
+            "O": "k8s",
+            "OU": "System"
+        }
+    ]
+}
+root@master-1:/k8s/kubernetes/ssl/cfssl-tools# ./init-certs.sh 
+Init Kubernetes Certs OK.
+Init Front Proxy Certs OK.
+root@master-1:/k8s/kubernetes/ssl/cfssl-tools# ls -lh ../
+total 108K
+-rw-r--r-- 1 root root 1009 Jul 20 15:18 admin.csr
+-rw------- 1 root root 1.7K Jul 20 15:18 admin-key.pem
+-rw-r--r-- 1 root root 1.4K Jul 20 15:18 admin.pem
+-rw-r--r-- 1 root root 1.1K Jul 20 15:18 ca.csr
+-rw------- 1 root root 1.7K Jul 20 15:18 ca-key.pem
+-rw-r--r-- 1 root root 1.3K Jul 20 15:18 ca.pem
+drwxr-xr-x 2 root root 4.0K Jul 20 15:17 cfssl-tools
+-rw-r--r-- 1 root root  944 Jul 20 15:18 front-proxy-ca.csr
+-rw------- 1 root root 1.7K Jul 20 15:18 front-proxy-ca-key.pem
+-rw-r--r-- 1 root root 1.1K Jul 20 15:18 front-proxy-ca.pem
+-rw-r--r-- 1 root root  903 Jul 20 15:18 front-proxy-client.csr
+-rw------- 1 root root 1.7K Jul 20 15:18 front-proxy-client-key.pem
+-rw-r--r-- 1 root root 1.2K Jul 20 15:18 front-proxy-client.pem
+-rw-r--r-- 1 root root 1.3K Jul 20 15:18 kube-apiserver.csr
+-rw------- 1 root root 1.7K Jul 20 15:18 kube-apiserver-key.pem
+-rw-r--r-- 1 root root 1.6K Jul 20 15:18 kube-apiserver.pem
+-rw-r--r-- 1 root root 1.1K Jul 20 15:18 kube-controller-manager.csr
+-rw------- 1 root root 1.7K Jul 20 15:18 kube-controller-manager-key.pem
+-rw-r--r-- 1 root root 1.4K Jul 20 15:18 kube-controller-manager.pem
+-rw-r--r-- 1 root root 1009 Jul 20 15:18 kube-proxy.csr
+-rw------- 1 root root 1.7K Jul 20 15:18 kube-proxy-key.pem
+-rw-r--r-- 1 root root 1.4K Jul 20 15:18 kube-proxy.pem
+-rw-r--r-- 1 root root 1017 Jul 20 15:18 kube-scheduler.csr
+-rw------- 1 root root 1.7K Jul 20 15:18 kube-scheduler-key.pem
+-rw-r--r-- 1 root root 1.4K Jul 20 15:18 kube-scheduler.pem
+-rw------- 1 root root 1.7K Jul 20 15:18 sa.key
+-rw-r--r-- 1 root root  451 Jul 20 15:18 sa.pub
+```
 
 
