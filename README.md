@@ -411,7 +411,7 @@ drwxr-xr-x 2 root root 4.0K Jul 20 15:08 init-kubeconfig
 -rw-r--r-- 1 root root   82 Jul 20 15:31 token.csv
 ```
 
-#### 5、分发token.svc、kubeconfig配置文件到master-2、master-3节点：
+#### 5、分发token.csv、kubeconfig配置文件到master-2、master-3节点：
 ```shell
 root@master-1:~# cd /k8s/kubernetes
 root@master-1:/k8s/kubernetes# scp -r cfg root@10.0.0.182:/k8s/kubernetes
