@@ -14,8 +14,8 @@
 #### 2、软件包及相关信息：
 ```shell
 k8s-v1.23.9/pkgs/k8s-etcd-3.4.18+bionic_amd64.deb                 # 持久状态存储etcd
-k8s-v1.23.9/pkgs/k8s-kubernetes-master-1.23.9+bionic_amd64.deb    # master核心组件(kube-apiserver、kube-controller-manager、kube-scheduler)
-k8s-v1.23.9/pkgs/k8s-kubernetes-node-1.23.9+bionic_amd64.deb      # node核心组件(kubelet、kube-proxy)
+k8s-v1.23.9/pkgs/k8s-kubernetes-master-1.23.9+bionic_amd64.deb    # master核心组件（kube-apiserver、kube-controller-manager、kube-scheduler）
+k8s-v1.23.9/pkgs/k8s-kubernetes-node-1.23.9+bionic_amd64.deb      # node核心组件（kubelet、kube-proxy）
 k8s-v1.23.9/pkgs/k8s-slb-1.16.1+bionic_amd64.deb                  # nginx四层代理，部署在node之上，作为kubelet、kube-proxy的代理访问kube-apiserver
 k8s-v1.23.9/calico-v3.22.3                                        # 网络插件calico
 k8s-v1.23.9/coredns-v1.8.6                                        # 服务发现coredns
@@ -42,8 +42,8 @@ https://github.com/etcd-io/etcd/releases/download/v3.4.18/etcd-v3.4.18-linux-amd
 - 配置时间同步
 - 配置master-1到master-2、master-3免密登录
 - 关闭unattended-upgrades.service自动更新服务
-- 提前安装部署Harbor(当前Harbor解析域名为：hub.speech.local)
-- 添加各节点dns解析或调整本地host文件：
+- 提前安装部署Harbor（当前Harbor域名解析为：hub.speech.local）
+- 添加各节点DNS解析或调整本地hosts文件：
 ```shell
 root@master-1:~# vi /etc/hosts
 10.0.0.181      master-1 etcd-1
@@ -53,7 +53,7 @@ root@master-1:~# vi /etc/hosts
 10.0.0.185      node-2
 10.0.0.186      node-3
 ```
-- 安装配置Docker(各个节点都需要)：
+- 安装配置Docker（各个节点都需要）：
 ```shell
 root@master-1:~# tar zxf k8s-v1.23.9.tar.gz
 root@master-1:~# cd k8s-v1.23.9/docker-ce-v20.10.12/
@@ -78,9 +78,11 @@ Selecting previously unselected package k8s-etcd.
 Preparing to unpack k8s-etcd-3.4.18+bionic_amd64.deb ...
 Unpacking k8s-etcd (3.4.18+bionic) ...
 Setting up k8s-etcd (3.4.18+bionic) ...
+root@master-1:~/k8s-v1.23.9/pkgs# scp k8s-etcd-3.4.18+bionic_amd64.deb root@10.0.0.182:/root
+root@master-1:~/k8s-v1.23.9/pkgs# scp k8s-etcd-3.4.18+bionic_amd64.deb root@10.0.0.183:/root
 ```
 
-#### 2、在master-1节点初始化etcd证书(注意双下滑线开头结尾项需要调整)：
+#### 2、在master-1节点初始化etcd证书（注意双下滑线开头结尾项需要调整）：
 ```shell
 root@master-1:~# cd /k8s/etcd/ssl/cfssl-tools
 root@master-1:/k8s/etcd/ssl/cfssl-tools# vi etcd-csr.json
