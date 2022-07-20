@@ -881,7 +881,7 @@ kubernetes-dashboard   kubernetes-dashboard        NodePort    10.254.48.190    
 
 
 ## 九、给Master添加污点并重启控制平面
-1、master作为集群控制平面一般不会运行负载：
+#### 1、master作为集群控制平面一般不会运行负载：
 ```shell
 root@master-1:~# kubectl taint node master-1 node-role.kubernetes.io/master:NoSchedule
 node/master-1 tainted
@@ -891,7 +891,7 @@ root@master-1:~# kubectl taint node master-3 node-role.kubernetes.io/master:NoSc
 node/master-3 tainted
 ```
 
-2、重启后master节点（包括node节点）会自动调整service为ipvs（取决于deb包中自动加载的内核模块）：
+#### 2、重启后master节点（包括node节点）会自动调整service为ipvs（取决于deb包中自动加载的内核模块）：
 ```shell
 root@master-1:~# dpkg -c k8s-v1.23.9/pkgs/k8s-kubernetes-node-1.23.9+bionic_amd64.deb | grep k8s.conf
 -rw-r--r-- root/root        28 2022-07-18 16:54 ./etc/modules-load.d/k8s.conf
