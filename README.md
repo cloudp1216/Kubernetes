@@ -744,7 +744,7 @@ kube-system   coredns-54d7c66b75-jwq8j                   1/1     Running   0    
 
 
 ## 七、部署Metrics-Server（核心指标监控）
-1、部署metrics-server前无法查看集群核心指标数据：
+#### 1、部署metrics-server前无法查看集群核心指标数据：
 ```shell
 root@master-1:~# kubectl top node
 error: Metrics API not available
@@ -752,7 +752,7 @@ root@master-1:~# kubectl top pod -A
 error: Metrics API not available
 ```
 
-2、调整metrics-server镜像仓库地址：
+#### 2、调整metrics-server镜像仓库地址：
 ```shell
 root@master-1:~# cd k8s-v1.23.9/metrics-server-v0.6.1
 root@master-1:~/k8s-v1.23.9/metrics-server-v0.6.1# cat components.yaml | grep image: -n
@@ -761,7 +761,7 @@ root@master-1:~/k8s-v1.23.9/metrics-server-v0.6.1# vi components.yaml +141      
 141:        image: hub.speech.local/k8s.gcr.io/metrics-server:v0.6.1
 ```
 
-3、创建metrics-server资源：
+#### 3、创建metrics-server资源：
 ```shell
 root@master-1:~/k8s-v1.23.9/metrics-server-v0.6.1# kubectl apply -f components.yaml
 serviceaccount/metrics-server created
@@ -775,7 +775,7 @@ deployment.apps/metrics-server created
 apiservice.apiregistration.k8s.io/v1beta1.metrics.k8s.io created
 ```
 
-4、查看pod：
+#### 4、查看pod：
 ```shell
 root@master-1:~# kubectl get pods -A -o wide
 NAMESPACE     NAME                                       READY   STATUS    RESTARTS      AGE   IP             NODE       NOMINATED NODE   READINESS GATES
@@ -788,7 +788,7 @@ kube-system   coredns-54d7c66b75-jwq8j                   1/1     Running   1 (31
 kube-system   metrics-server-6c865bb754-9ms5p            1/1     Running   0             59s   10.244.218.2   master-1   <none>           <none>
 ```
 
-5、查看核心资源指标：
+#### 5、查看核心资源指标：
 ```shell
 root@master-1:~# kubectl top node
 NAME       CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
