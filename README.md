@@ -754,7 +754,7 @@ node/master-3 tainted
 
 
 ## 八、重启master-1、master-2、master-3
-1、重启后集群会自动调整service为ipvs（取决于deb包中自动加载的内核模块）：
+1、重启后节点（包括node）会自动调整service为ipvs（取决于deb包中自动加载的内核模块）：
 ```shell
 root@master-1:~# dpkg -c k8s-v1.23.9/pkgs/k8s-kubernetes-node-1.23.9+bionic_amd64.deb | grep k8s.conf
 -rw-r--r-- root/root        28 2022-07-18 16:54 ./etc/modules-load.d/k8s.conf
