@@ -68,9 +68,8 @@ root@master-1:~/k8s-v1.23.9/docker-ce-v20.10.12# systemctl restart docker
 
 
 ## 二、部署etcd集群
-#### 1、分别在master-1、master-2、master-3中安装etcd：
+#### 1、分别在etcd-1、etcd-2、etcd-3节点安装etcd：
 ```shell
-root@master-1:~# tar zxf k8s-v1.23.9.tar.gz 
 root@master-1:~# cd k8s-v1.23.9/pkgs/
 root@master-1:~/k8s-v1.23.9/pkgs# dpkg -i k8s-etcd-3.4.18+bionic_amd64.deb 
 Selecting previously unselected package k8s-etcd.
@@ -82,7 +81,7 @@ root@master-1:~/k8s-v1.23.9/pkgs# scp k8s-etcd-3.4.18+bionic_amd64.deb root@10.0
 root@master-1:~/k8s-v1.23.9/pkgs# scp k8s-etcd-3.4.18+bionic_amd64.deb root@10.0.0.183:/root
 ```
 
-#### 2、在master-1节点初始化etcd证书（注意双下滑线开头结尾项需要调整）：
+#### 2、在etcd-1节点初始化etcd证书（注意双下滑线开头结尾项需要调整）：
 ```shell
 root@master-1:~# cd /k8s/etcd/ssl/cfssl-tools
 root@master-1:/k8s/etcd/ssl/cfssl-tools# vi etcd-csr.json
@@ -149,10 +148,118 @@ drwxr-xr-x 2 root root 4.0K Jul 20 14:11 cfssl-tools
 -rw-r--r-- 1 root root 1.5K Jul 20 14:11 peer.pem
 ```
 
-#### 3、分发etcd证书到master-2、master-3节点：
+#### 3、分发etcd证书到etcd-2、etcd-3节点：
 ```shell
 root@master-1:/k8s/etcd# scp -r ssl root@10.0.0.182:/k8s/etcd
 root@master-1:/k8s/etcd# scp -r ssl root@10.0.0.183:/k8s/etcd
 ```
+
+#### 4、分别调整etcd-1、etcd-2、etcd-3配置文件：
+```shell
+root@master-1:~# cd /k8s/etcd/cfg/
+root@master-1:/k8s/etcd/cfg# ln -svf etcd.cluster etcd    # 注意etcd默认为单实例配置，这里调整为集群配置
+'etcd' -> 'etcd.cluster'
+root@master-1:/k8s/etcd/cfg# vi etcd                      # 注意所有双下滑杠开头结尾的配置项都需要调整，ETCD_ARGS和ETCD_DATA_DIR变量值建议调整和节点一致
+#[Member]
+ETCD_ARGS="--name=etcd-1"
+ETCD_DATA_DIR="/k8s/etcd/etcd-1.data"
+ETCD_LISTEN_CLIENT_URLS="https://10.0.0.181:2379,https://127.0.0.1:2379"
+ETCD_ADVERTISE_CLIENT_URLS="https://10.0.0.181:2379"
+
+
+#[Clustering]
+ETCD_LISTEN_PEER_URLS="https://10.0.0.181:2380"
+ETCD_INITIAL_ADVERTISE_PEER_URLS="https://10.0.0.181:2380"
+ETCD_INITIAL_CLUSTER="etcd-1=https://10.0.0.181:2380,etcd-2=https://10.0.0.182:2380,etcd-3=https://10.0.0.183:2380"
+ETCD_INITIAL_CLUSTER_STATE="new"
+ETCD_INITIAL_CLUSTER_TOKEN="etcd-cluster"
+
+
+#[Security]
+ETCD_AUTO_TLS="true"
+ETCD_CLIENT_CERT_AUTH="true"
+ETCD_TRUSTED_CA_FILE="/k8s/etcd/ssl/ca.pem"
+ETCD_CERT_FILE="/k8s/etcd/ssl/etcd.pem"
+ETCD_KEY_FILE="/k8s/etcd/ssl/etcd-key.pem"
+ETCD_PEER_AUTO_TLS="true"
+ETCD_PEER_CLIENT_CERT_AUTH="true"
+ETCD_PEER_TRUSTED_CA_FILE="/k8s/etcd/ssl/ca.pem"
+ETCD_PEER_CERT_FILE="/k8s/etcd/ssl/peer.pem"
+ETCD_PEER_KEY_FILE="/k8s/etcd/ssl/peer-key.pem"
+```
+
+```shell
+root@master-2:~# cd /k8s/etcd/cfg/
+root@master-2:/k8s/etcd/cfg# ln -svf etcd.cluster etcd
+'etcd' -> 'etcd.cluster'
+root@master-2:/k8s/etcd/cfg# vi etcd
+#[Member]
+ETCD_ARGS="--name=etcd-2"
+ETCD_DATA_DIR="/k8s/etcd/etcd-2.data"
+ETCD_LISTEN_CLIENT_URLS="https://10.0.0.182:2379,https://127.0.0.1:2379"
+ETCD_ADVERTISE_CLIENT_URLS="https://10.0.0.182:2379"
+
+
+#[Clustering]
+ETCD_LISTEN_PEER_URLS="https://10.0.0.182:2380"
+ETCD_INITIAL_ADVERTISE_PEER_URLS="https://10.0.0.182:2380"
+ETCD_INITIAL_CLUSTER="etcd-1=https://10.0.0.181:2380,etcd-2=https://10.0.0.182:2380,etcd-3=https://10.0.0.183:2380"
+ETCD_INITIAL_CLUSTER_STATE="new"
+ETCD_INITIAL_CLUSTER_TOKEN="etcd-cluster"
+
+
+#[Security]
+ETCD_AUTO_TLS="true"
+ETCD_CLIENT_CERT_AUTH="true"
+ETCD_TRUSTED_CA_FILE="/k8s/etcd/ssl/ca.pem"
+ETCD_CERT_FILE="/k8s/etcd/ssl/etcd.pem"
+ETCD_KEY_FILE="/k8s/etcd/ssl/etcd-key.pem"
+ETCD_PEER_AUTO_TLS="true"
+ETCD_PEER_CLIENT_CERT_AUTH="true"
+ETCD_PEER_TRUSTED_CA_FILE="/k8s/etcd/ssl/ca.pem"
+ETCD_PEER_CERT_FILE="/k8s/etcd/ssl/peer.pem"
+ETCD_PEER_KEY_FILE="/k8s/etcd/ssl/peer-key.pem"
+```
+
+```shell
+root@master-3:~# cd /k8s/etcd/cfg/
+root@master-3:/k8s/etcd/cfg# ln -svf etcd.cluster etcd
+'etcd' -> 'etcd.cluster'
+root@master-3:/k8s/etcd/cfg# vi etcd
+#[Member]
+ETCD_ARGS="--name=etcd-3"
+ETCD_DATA_DIR="/k8s/etcd/etcd-3.data"
+ETCD_LISTEN_CLIENT_URLS="https://10.0.0.183:2379,https://127.0.0.1:2379"
+ETCD_ADVERTISE_CLIENT_URLS="https://10.0.0.183:2379"
+
+
+#[Clustering]
+ETCD_LISTEN_PEER_URLS="https://10.0.0.183:2380"
+ETCD_INITIAL_ADVERTISE_PEER_URLS="https://10.0.0.183:2380"
+ETCD_INITIAL_CLUSTER="etcd-1=https://10.0.0.181:2380,etcd-2=https://10.0.0.182:2380,etcd-3=https://10.0.0.183:2380"
+ETCD_INITIAL_CLUSTER_STATE="new"
+ETCD_INITIAL_CLUSTER_TOKEN="etcd-cluster"
+
+
+#[Security]
+ETCD_AUTO_TLS="true"
+ETCD_CLIENT_CERT_AUTH="true"
+ETCD_TRUSTED_CA_FILE="/k8s/etcd/ssl/ca.pem"
+ETCD_CERT_FILE="/k8s/etcd/ssl/etcd.pem"
+ETCD_KEY_FILE="/k8s/etcd/ssl/etcd-key.pem"
+ETCD_PEER_AUTO_TLS="true"
+ETCD_PEER_CLIENT_CERT_AUTH="true"
+ETCD_PEER_TRUSTED_CA_FILE="/k8s/etcd/ssl/ca.pem"
+ETCD_PEER_CERT_FILE="/k8s/etcd/ssl/peer.pem"
+ETCD_PEER_KEY_FILE="/k8s/etcd/ssl/peer-key.pem"
+```
+
+#### 5、分别在etcd-1、etcd-2、etcd-3节点启动etcd
+```shell
+root@master-1:~# systemctl start etcd && systemctl enable etcd
+root@master-1:~# ssh root@10.0.0.182 'systemctl start etcd && systemctl enable etcd'
+root@master-1:~# ssh root@10.0.0.183 'systemctl start etcd && systemctl enable etcd'
+```
+
 
 
