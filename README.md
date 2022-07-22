@@ -171,6 +171,7 @@ root@master-1:/k8s/etcd# scp -r ssl root@10.0.0.183:/k8s/etcd
 ```
 
 #### 4、分别调整etcd-1、etcd-2、etcd-3节点etcd配置文件：
+etcd-1：
 ```shell
 root@master-1:~# cd /k8s/etcd/cfg
 root@master-1:/k8s/etcd/cfg# ln -svf etcd.cluster etcd    # 注意etcd默认配置为单实例，这里调整配置为集群
@@ -203,6 +204,7 @@ ETCD_PEER_TRUSTED_CA_FILE="/k8s/etcd/ssl/ca.pem"
 ETCD_PEER_CERT_FILE="/k8s/etcd/ssl/peer.pem"
 ETCD_PEER_KEY_FILE="/k8s/etcd/ssl/peer-key.pem"
 ```
+etcd-2：
 ```shell
 root@master-2:~# cd /k8s/etcd/cfg
 root@master-2:/k8s/etcd/cfg# ln -svf etcd.cluster etcd
@@ -235,6 +237,7 @@ ETCD_PEER_TRUSTED_CA_FILE="/k8s/etcd/ssl/ca.pem"
 ETCD_PEER_CERT_FILE="/k8s/etcd/ssl/peer.pem"
 ETCD_PEER_KEY_FILE="/k8s/etcd/ssl/peer-key.pem"
 ```
+etcd-3：
 ```shell
 root@master-3:~# cd /k8s/etcd/cfg
 root@master-3:/k8s/etcd/cfg# ln -svf etcd.cluster etcd
@@ -429,6 +432,7 @@ root@master-1:/k8s/kubernetes# scp -r cfg root@10.0.0.183:/k8s/kubernetes
 ```
 
 #### 6、调整master-1、master-2、master-3节点kube-apiserver配置：
+master-1：
 ```shell
 root@master-1:~# vi /k8s/kubernetes/cfg/kube-apiserver
 KUBE_APISERVER_ARGS=" \
@@ -463,6 +467,7 @@ KUBE_APISERVER_ARGS=" \
     --logtostderr=true \
     --v=2"
 ```
+master-2：
 ```shell
 root@master-2:~# vi /k8s/kubernetes/cfg/kube-apiserver
 KUBE_APISERVER_ARGS=" \
@@ -497,6 +502,7 @@ KUBE_APISERVER_ARGS=" \
     --logtostderr=true \
     --v=2"
 ```
+master-3：
 ```shell
 root@master-3:~# vi /k8s/kubernetes/cfg/kube-apiserver
 KUBE_APISERVER_ARGS=" \
