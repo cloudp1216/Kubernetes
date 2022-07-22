@@ -22,7 +22,7 @@ k8s-v1.23.9/pkgs/k8s-slb-1.16.1+bionic_amd64.deb                  # 服务负载
 k8s-v1.23.9/calico-v3.22.3                                        # 网络插件calico
 k8s-v1.23.9/coredns-v1.8.6                                        # 服务发现coredns
 k8s-v1.23.9/dashboard-v2.5.1                                      # 集群可视化dashboard
-k8s-v1.23.9/docker-ce-v20.10.12                                   # 容器服务docker
+k8s-v1.23.9/docker-ce-v20.10.12                                   # 容器服务docker（deb包从阿里云镜像站下载）
 k8s-v1.23.9/metrics-server-v0.6.1                                 # 核心指标监控metrics-server
 
 注意：
