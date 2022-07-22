@@ -900,7 +900,7 @@ kubernetes-dashboard   dashboard-metrics-scraper   ClusterIP   10.254.133.164   
 kubernetes-dashboard   kubernetes-dashboard        NodePort    10.254.48.190    <none>        443:34168/TCP            3m28s   k8s-app=kubernetes-dashboard
 ```
 
-#### 7、当前集群暂未添加node，访问master任意ip（ 例如：https://10.0.0.183:34168 ）即可打开dashboard界面：
+#### 7、当前集群暂未添加node，访问任意master ip（ 例如：https://10.0.0.183:34168 ）即可打开dashboard界面：
 ![](./img/dashboard-1.png)
 ![](./img/dashboard-2.png)
 
