@@ -49,7 +49,7 @@ https://github.com/etcd-io/etcd/releases/download/v3.5.4/etcd-v3.5.4-linux-amd64
 
 
 #### 5、基础环境配置（略）：
-- 关闭swqp
+- 关闭swap
 - 配置时间同步
 - 配置主机名
 - 配置master-1到master-2、master-3免密登录
