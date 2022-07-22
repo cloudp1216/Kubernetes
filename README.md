@@ -44,6 +44,7 @@ https://github.com/etcd-io/etcd/releases/download/v3.5.4/etcd-v3.5.4-linux-amd64
 - Service端口范围：30000 - 50000
 - Cluster Daemon：cluster.local
 - Kubernetes和etcd证书默认签发时长：20年
+- Kubelet证书默认签发时长：10年
 
 
 #### 5、软件包下载地址：
