@@ -643,7 +643,7 @@ master-3   NotReady   <none>   69s   v1.23.9   10.0.0.183    <none>        Ubunt
 ```
 
 
-## 五、部署网络插件calico
+## 五、部署网络插件Calico
 #### 1、调整calico镜像为本地仓库：
 ```shell
 root@master-1:~# cd k8s-v1.23.9/calico-v3.22.3
@@ -720,7 +720,7 @@ master-3   Ready    <none>   22m   v1.23.9   10.0.0.183    <none>        Ubuntu 
 ```
 
 
-## 六、部署coredns
+## 六、部署CoreDNS
 #### 1、调整coredns镜像为本地仓库：
 ```shell
 root@master-1:~# cd k8s-v1.23.9/coredns-v1.8.6
@@ -829,7 +829,7 @@ kube-system   metrics-server-6c865bb754-9ms5p            6m           15Mi
 ```
 
 
-## 八、部署dashboard（按需部署）
+## 八、部署Dashboard（按需部署）
 #### 1、调整dashboard镜像仓库地址：
 ```shell
 root@master-1:~# cd k8s-v1.23.9/dashboard-v2.5.1/
