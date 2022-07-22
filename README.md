@@ -15,23 +15,15 @@
 #### 2、软件包及相关信息：
 ```shell
 包信息：
-k8s-v1.23.9/pkgs/k8s-etcd-3.4.18+bionic_amd64.deb                 # 持久状态存储etcd
+k8s-v1.23.9/pkgs/k8s-etcd-3.5.4+bionic_amd64.deb                  # 持久状态存储etcd
 k8s-v1.23.9/pkgs/k8s-kubernetes-master-1.23.9+bionic_amd64.deb    # master核心组件（kube-apiserver、kube-controller-manager、kube-scheduler）
 k8s-v1.23.9/pkgs/k8s-kubernetes-node-1.23.9+bionic_amd64.deb      # node核心组件（kubelet、kube-proxy）
-k8s-v1.23.9/pkgs/k8s-slb-1.16.1+bionic_amd64.deb                  # nginx四层代理，部署在node之上，作为kubelet、kube-proxy的代理访问kube-apiserver
+k8s-v1.23.9/pkgs/k8s-slb-1.16.1+bionic_amd64.deb                  # 服务负载均衡（nginx），代理kubelet、kube-proxy访问kube-apiserver，部署在各node之上
 k8s-v1.23.9/calico-v3.22.3                                        # 网络插件calico
 k8s-v1.23.9/coredns-v1.8.6                                        # 服务发现coredns
 k8s-v1.23.9/dashboard-v2.5.1                                      # 集群可视化dashboard
 k8s-v1.23.9/docker-ce-v20.10.12                                   # 容器服务docker
 k8s-v1.23.9/metrics-server-v0.6.1                                 # 核心指标监控metrics-server
-
-
-默认配置：
-Pod地址池：10.244.0.0/16
-Service地址池：10.254.0.0/16
-Service模型：ipvs（调度算法默认采用lc）
-Service端口范围: 30000-50000
-
 
 注意：
 k8s-etcd、k8s-kubernetes-master、k8s-kubernetes-node包中二进制程序由官方下载，此处仅做了二次封装，k8s-slb由nginx-1.16.1.tar.gz源码编译，未更改过任何源代码：
@@ -39,21 +31,30 @@ https://dl.k8s.io/v1.23.9/kubernetes-server-linux-amd64.tar.gz
 https://dl.k8s.io/v1.23.9/kubernetes-client-linux-amd64.tar.gz
 https://dl.k8s.io/v1.23.9/kubernetes-node-linux-amd64.tar.gz
 https://nginx.org/download/nginx-1.16.1.tar.gz
-https://github.com/etcd-io/etcd/releases/download/v3.4.18/etcd-v3.4.18-linux-amd64.tar.gz
+https://github.com/etcd-io/etcd/releases/download/v3.5.4/etcd-v3.5.4-linux-amd64.tar.gz
 ```
 
+#### 3、集群默认配置：
+- Pod地址池：10.244.0.0/16
+- Service地址池：10.254.0.0/16
+- Service代理模型：ipvs（调度算法默认采用lc）
+- Service端口范围：30000 - 50000
+- Cluster Daemon：cluster.local
+- Kubernetes和etcd证书默认签发时长：20年
+
+
 #### 4、软件包下载地址：
-链接: https://pan.baidu.com/s/1i1KOWIPpgS2qfGloXkXaBw </p>
-提取码: 64uk 
+链接: https://pan.baidu.com/s/1i1KOWIP.... </p>
+提取码: xxxx
 
 
-#### 5、基础环境配置：
+#### 5、基础环境配置（略）：
 - 配置时间同步
 - 配置master-1到master-2、master-3免密登录
-- 关闭unattended-upgrades.service自动更新服务
+- 关闭unattended-upgrades自动更新服务
 - 提前安装ipvsadm、ipset
-- 提前安装部署Harbor（当前Harbor域名解析为：hub.speech.local）
-- 添加各节点DNS解析或调整本地hosts文件（各个节点都需要）：
+- 提前安装私有镜像仓库Harbor（当前Harbor域名解析为：hub.speech.local）
+- 添加各节点DNS解析或调整本地hosts文件：
 ```shell
 root@master-1:~# vi /etc/hosts
 10.0.0.181      master-1 etcd-1
@@ -78,24 +79,24 @@ root@master-1:~/k8s-v1.23.9/docker-ce-v20.10.12# systemctl restart docker
 
 
 ## 二、部署etcd集群
-#### 1、分别在etcd-1、etcd-2、etcd-3节点安装k8s-etcd-3.4.18+bionic_amd64.deb组件：
+#### 1、分别在etcd-1、etcd-2、etcd-3节点安装k8s-etcd-3.5.4+bionic_amd64.deb核心组件：
 ```shell
 root@master-1:~# cd k8s-v1.23.9/pkgs/
-root@master-1:~/k8s-v1.23.9/pkgs# dpkg -i k8s-etcd-3.4.18+bionic_amd64.deb 
+root@master-1:~/k8s-v1.23.9/pkgs# dpkg -i k8s-etcd-3.5.4+bionic_amd64.deb
 Selecting previously unselected package k8s-etcd.
-(Reading database ... 66889 files and directories currently installed.)
-Preparing to unpack k8s-etcd-3.4.18+bionic_amd64.deb ...
-Unpacking k8s-etcd (3.4.18+bionic) ...
-Setting up k8s-etcd (3.4.18+bionic) ...
+(Reading database ... 66847 files and directories currently installed.)
+Preparing to unpack k8s-etcd-3.5.4+bionic_amd64.deb ...
+Unpacking k8s-etcd (3.5.4+bionic) ...
+Setting up k8s-etcd (3.5.4+bionic) ...
 ```
 ```shell
-root@master-1:~/k8s-v1.23.9/pkgs# scp k8s-etcd-3.4.18+bionic_amd64.deb root@10.0.0.182:/root
-root@master-1:~/k8s-v1.23.9/pkgs# scp k8s-etcd-3.4.18+bionic_amd64.deb root@10.0.0.183:/root
-root@master-1:~/k8s-v1.23.9/pkgs# ssh root@10.0.0.182 'cd /root && dpkg -i k8s-etcd-3.4.18+bionic_amd64.deb'
-root@master-1:~/k8s-v1.23.9/pkgs# ssh root@10.0.0.183 'cd /root && dpkg -i k8s-etcd-3.4.18+bionic_amd64.deb'
+root@master-1:~/k8s-v1.23.9/pkgs# scp k8s-etcd-3.5.4+bionic_amd64.deb root@10.0.0.182:/root
+root@master-1:~/k8s-v1.23.9/pkgs# scp k8s-etcd-3.5.4+bionic_amd64.deb root@10.0.0.183:/root
+root@master-1:~/k8s-v1.23.9/pkgs# ssh root@10.0.0.182 'cd /root && dpkg -i k8s-etcd-3.5.4+bionic_amd64.deb'
+root@master-1:~/k8s-v1.23.9/pkgs# ssh root@10.0.0.183 'cd /root && dpkg -i k8s-etcd-3.5.4+bionic_amd64.deb'
 ```
 
-#### 2、在etcd-1节点初始化etcd证书（注意双下滑线开头结尾项需要调整）：
+#### 2、在etcd-1节点初始化etcd证书（注意以双下滑线开头结尾的配置项需要调整）：
 ```shell
 root@master-1:~# cd /k8s/etcd/ssl/cfssl-tools
 root@master-1:/k8s/etcd/ssl/cfssl-tools# vi etcd-csr.json
@@ -146,7 +147,7 @@ root@master-1:/k8s/etcd/ssl/cfssl-tools# vi peer-csr.json
         }
     ]
 }
-root@master-1:/k8s/etcd/ssl/cfssl-tools# ./init-certs.sh 
+root@master-1:/k8s/etcd/ssl/cfssl-tools# ./init-certs.sh  # 初始化证书
 Init Etcd Certs OK.
 root@master-1:/k8s/etcd/ssl/cfssl-tools# ls -lh ../
 total 40K
@@ -169,12 +170,12 @@ root@master-1:/k8s/etcd# scp -r ssl root@10.0.0.182:/k8s/etcd
 root@master-1:/k8s/etcd# scp -r ssl root@10.0.0.183:/k8s/etcd
 ```
 
-#### 4、分别调整etcd-1、etcd-2、etcd-3配置文件：
+#### 4、分别调整etcd-1、etcd-2、etcd-3节点etcd配置文件：
 ```shell
 root@master-1:~# cd /k8s/etcd/cfg
-root@master-1:/k8s/etcd/cfg# ln -svf etcd.cluster etcd    # 注意etcd默认为单实例配置，这里调整为集群配置
+root@master-1:/k8s/etcd/cfg# ln -svf etcd.cluster etcd    # 注意etcd默认配置为单实例，这里调整配置为集群
 'etcd' -> 'etcd.cluster'
-root@master-1:/k8s/etcd/cfg# vi etcd                      # 注意所有双下滑杠开头结尾的配置项都需要调整，ETCD_ARGS和ETCD_DATA_DIR变量值建议调整和节点一致
+root@master-1:/k8s/etcd/cfg# vi etcd                      # 注意所有双下滑杠开头结尾的配置项都需要调整，ETCD_ARGS和ETCD_DATA_DIR变量值建议调整与节点一致
 #[Member]
 ETCD_ARGS="--name=etcd-1"
 ETCD_DATA_DIR="/k8s/etcd/etcd-1.data"
@@ -267,7 +268,7 @@ ETCD_PEER_CERT_FILE="/k8s/etcd/ssl/peer.pem"
 ETCD_PEER_KEY_FILE="/k8s/etcd/ssl/peer-key.pem"
 ```
 
-#### 5、分别在etcd-1、etcd-2、etcd-3节点启动etcd：
+#### 5、分别启动etcd-1、etcd-2、etcd-3节点的etcd服务：
 ```shell
 root@master-1:~# systemctl start etcd && systemctl enable etcd
 root@master-1:~# ssh root@10.0.0.182 'systemctl start etcd && systemctl enable etcd'
@@ -284,7 +285,7 @@ root      5824     1  2 14:50 ?        00:00:11 /k8s/etcd/bin/etcd --name=etcd-3
 
 
 ## 三、部署Kubernetes集群
-#### 1、分别在master-1、master-2、master-3上安装k8s-kubernetes-master-1.23.9+bionic_amd64.deb与k8s-kubernetes-node-1.23.9+bionic_amd64.deb组件：
+#### 1、分别在master-1、master-2、master-3上安装k8s-kubernetes-master-1.23.9+bionic_amd64.deb、k8s-kubernetes-node-1.23.9+bionic_amd64.deb核心组件：
 ```shell
 root@master-1:~# cd k8s-v1.23.9/pkgs/
 root@master-1:~/k8s-v1.23.9/pkgs# dpkg -i k8s-kubernetes-master-1.23.9+bionic_amd64.deb k8s-kubernetes-node-1.23.9+bionic_amd64.deb 
@@ -308,7 +309,7 @@ root@master-1:~/k8s-v1.23.9/pkgs# ssh root@10.0.0.183 'cd /root && dpkg -i k8s-k
 #### 2、在master-1节点初始化kubernetes集群证书：
 ```shell
 root@master-1:~# cd /k8s/kubernetes/ssl/cfssl-tools
-root@master-1:/k8s/kubernetes/ssl/cfssl-tools# vi kube-apiserver-csr.json  # 注意双下滑杠开头结尾的配置项需要调整
+root@master-1:/k8s/kubernetes/ssl/cfssl-tools# vi kube-apiserver-csr.json  # 注意以双下滑线开头结尾的配置项需要调整
 {
     "CN": "kubernetes",
     "hosts": [
@@ -338,7 +339,7 @@ root@master-1:/k8s/kubernetes/ssl/cfssl-tools# vi kube-apiserver-csr.json  # 注
         }
     ]
 }
-root@master-1:/k8s/kubernetes/ssl/cfssl-tools# ./init-certs.sh 
+root@master-1:/k8s/kubernetes/ssl/cfssl-tools# ./init-certs.sh  # 初始化证书
 Init Kubernetes Certs OK.
 Init Front Proxy Certs OK.
 root@master-1:/k8s/kubernetes/ssl/cfssl-tools# ls -lh ../
@@ -379,7 +380,7 @@ root@master-1:/k8s/kubernetes# scp -r ssl root@10.0.0.182:/k8s/kubernetes
 root@master-1:/k8s/kubernetes# scp -r ssl root@10.0.0.183:/k8s/kubernetes
 ```
 
-#### 4、初始化token.svc、kubeconfig配置文件：
+#### 4、初始化kubeconfig配置文件：
 ```shell
 root@master-1:~# cd /k8s/kubernetes/cfg/init-kubeconfig
 root@master-1:/k8s/kubernetes/cfg/init-kubeconfig# ./init-kubeconfig.sh 
@@ -420,18 +421,18 @@ drwxr-xr-x 2 root root 4.0K Jul 20 15:08 init-kubeconfig
 -rw-r--r-- 1 root root   82 Jul 20 15:31 token.csv
 ```
 
-#### 5、分发token.csv、kubeconfig配置文件到master-2、master-3节点：
+#### 5、分发kubeconfig配置文件到master-2、master-3节点：
 ```shell
 root@master-1:~# cd /k8s/kubernetes
 root@master-1:/k8s/kubernetes# scp -r cfg root@10.0.0.182:/k8s/kubernetes
 root@master-1:/k8s/kubernetes# scp -r cfg root@10.0.0.183:/k8s/kubernetes
 ```
 
-#### 6、调整master-1、master-2、master-3各节点kube-apiserver配置文件：
+#### 6、调整master-1、master-2、master-3节点kube-apiserver配置：
 ```shell
 root@master-1:~# vi /k8s/kubernetes/cfg/kube-apiserver
 KUBE_APISERVER_ARGS=" \
-    --advertise-address=10.0.0.181 \                                                             # 注意此项
+    --advertise-address=10.0.0.181 \                                                          # 调整此项
     --allow-privileged=true \
     --authorization-mode=Node,RBAC \
     --enable-admission-plugins=NodeRestriction \
@@ -443,7 +444,7 @@ KUBE_APISERVER_ARGS=" \
     --client-ca-file=/k8s/kubernetes/ssl/ca.pem \
     --tls-cert-file=/k8s/kubernetes/ssl/kube-apiserver.pem \
     --tls-private-key-file=/k8s/kubernetes/ssl/kube-apiserver-key.pem \
-    --etcd-servers=https://10.0.0.181:2379,https://10.0.0.182:2379,https://10.0.0.183:2379 \     # 注意此项
+    --etcd-servers=https://10.0.0.181:2379,https://10.0.0.182:2379,https://10.0.0.183:2379 \  # 调整此项
     --etcd-cafile=/k8s/etcd/ssl/ca.pem \
     --etcd-certfile=/k8s/etcd/ssl/etcd.pem \
     --etcd-keyfile=/k8s/etcd/ssl/etcd-key.pem \
@@ -561,12 +562,12 @@ root@master-1:~# cp /k8s/kubernetes/cfg/admin.kubeconfig ~/.kube/config
 ```shell
 root@master-1:~# kubectl get cs
 Warning: v1 ComponentStatus is deprecated in v1.19+
-NAME                 STATUS    MESSAGE             ERROR
-scheduler            Healthy   ok                  
-controller-manager   Healthy   ok                  
-etcd-0               Healthy   {"health":"true"}   
-etcd-1               Healthy   {"health":"true"}   
-etcd-2               Healthy   {"health":"true"}   
+NAME                 STATUS    MESSAGE                         ERROR
+scheduler            Healthy   ok                              
+controller-manager   Healthy   ok                              
+etcd-0               Healthy   {"health":"true","reason":""}   
+etcd-2               Healthy   {"health":"true","reason":""}   
+etcd-1               Healthy   {"health":"true","reason":""}   
 ```
 
 #### 12、kubelet-bootstrap账号授权：
@@ -593,7 +594,7 @@ KUBELET_ARGS=" \
     --cert-dir=/k8s/kubernetes/ssl \
     --hairpin-mode=promiscuous-bridge \
     --serialize-image-pulls=false \
-    --pod-infra-container-image=hub.speech.local/k8s.gcr.io/pause:3.6 \     # 注意此项，pause镜像要提前推送到本地镜像仓库
+    --pod-infra-container-image=hub.speech.local/k8s.gcr.io/pause:3.6 \   # 调整此项，pause镜像要提前推送到本地镜像仓库
     --logtostderr=true \
     --v=2"
 ```
@@ -620,7 +621,7 @@ root@master-1:~# kubectl certificate approve node-csr-t5ZhqKD6bjot4WSbvbmyYrD520
 certificatesigningrequest.certificates.k8s.io/node-csr-t5ZhqKD6bjot4WSbvbmyYrD520Ba4CpX2gGO-Me9KFo approved
 ```
 
-#### 4、查看节点（NotReady是因为未部署网络插件）：
+#### 4、查看节点状态（NotReady是因为未部署网络插件）：
 ```shell
 root@master-1:~# kubectl get node -o wide
 NAME       STATUS     ROLES    AGE   VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION       CONTAINER-RUNTIME
@@ -630,8 +631,8 @@ master-3   NotReady   <none>   69s   v1.23.9   10.0.0.183    <none>        Ubunt
 ```
 
 
-## 五、部署网络插件Calico
-#### 1、调整calico镜像仓库地址：
+## 五、部署网络插件calico
+#### 1、调整calico镜像为本地仓库：
 ```shell
 root@master-1:~# cd k8s-v1.23.9/calico-v3.22.3
 root@master-1:~# cat calico.yaml | grep image -n
@@ -665,7 +666,7 @@ root@master-1:~/k8s-v1.23.9/calico-v3.22.3# sed -i 's#.*etcd_cert:.*#  etcd_cert
 root@master-1:~/k8s-v1.23.9/calico-v3.22.3# sed -i 's#.*etcd_key:.*#  etcd_key: "/calico-secrets/etcd-key"#g' calico.yaml
 ```
 
-#### 4、设置Pod地址池（注意要和kube-proxy配置项--cluster-cidr地址池一致）：
+#### 4、设置pod地址池（默认地址池为10.244.0.0/16，如需调整请确保kube-proxy、kube-controller-manager配置一致）：
 ```shell
 root@master-1:~/k8s-v1.23.9/calico-v3.22.3# CALICO_IPV4POOL_CIDR="10.244.0.0/16"
 root@master-1:~/k8s-v1.23.9/calico-v3.22.3# sed -i "s#192.168.0.0/16#${CALICO_IPV4POOL_CIDR}#g" calico.yaml
@@ -687,7 +688,7 @@ serviceaccount/calico-kube-controllers created
 poddisruptionbudget.policy/calico-kube-controllers created
 ```
 
-#### 6、查看pod：
+#### 6、查看pod状态：
 ```shell
 root@master-1:~# kubectl get pods -A -o wide
 NAMESPACE     NAME                                       READY   STATUS    RESTARTS   AGE    IP           NODE       NOMINATED NODE   READINESS GATES
@@ -697,7 +698,7 @@ kube-system   calico-node-9vbc8                          1/1     Running   0    
 kube-system   calico-node-d92c8                          1/1     Running   0          2m6s   10.0.0.181   master-1   <none>           <none>
 ```
 
-#### 7、再次查看node：
+#### 7、再次查看node状态：
 ```shell
 root@master-1:~# kubectl get node -o wide
 NAME       STATUS   ROLES    AGE   VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION       CONTAINER-RUNTIME
@@ -707,8 +708,8 @@ master-3   Ready    <none>   22m   v1.23.9   10.0.0.183    <none>        Ubuntu 
 ```
 
 
-## 六、部署CoreDNS
-#### 1、调整coredns镜像仓库地址：
+## 六、部署coredns
+#### 1、调整coredns镜像为本地仓库：
 ```shell
 root@master-1:~# cd k8s-v1.23.9/coredns-v1.8.6
 root@master-1:~/k8s-v1.23.9/coredns-v1.8.6# cat coredns.yaml | grep image: -n
@@ -739,7 +740,7 @@ deployment.apps/coredns created
 service/kube-dns created
 ```
 
-#### 4、再次查看pod资源：
+#### 4、查看pod状态：
 ```shell
 root@master-1:~/k8s-v1.23.9/coredns-v1.8.6# kubectl get pods -A -o wide
 NAMESPACE     NAME                                       READY   STATUS    RESTARTS   AGE   IP             NODE       NOMINATED NODE   READINESS GATES
@@ -752,8 +753,8 @@ kube-system   coredns-54d7c66b75-jwq8j                   1/1     Running   0    
 ```
 
 
-## 七、部署Metrics-Server（核心指标监控）
-#### 1、部署metrics-server前无法查看集群核心指标数据：
+## 七、部署metrics-server
+#### 1、部署metrics-server前无法查看集群核心资源指标：
 ```shell
 root@master-1:~# kubectl top node
 error: Metrics API not available
@@ -761,7 +762,7 @@ root@master-1:~# kubectl top pod -A
 error: Metrics API not available
 ```
 
-#### 2、调整metrics-server镜像仓库地址：
+#### 2、调整metrics-server镜像为本地仓库：
 ```shell
 root@master-1:~# cd k8s-v1.23.9/metrics-server-v0.6.1
 root@master-1:~/k8s-v1.23.9/metrics-server-v0.6.1# cat components.yaml | grep image: -n
@@ -784,7 +785,7 @@ deployment.apps/metrics-server created
 apiservice.apiregistration.k8s.io/v1beta1.metrics.k8s.io created
 ```
 
-#### 4、查看pod：
+#### 4、查看pod状态：
 ```shell
 root@master-1:~# kubectl get pods -A -o wide
 NAMESPACE     NAME                                       READY   STATUS    RESTARTS      AGE   IP             NODE       NOMINATED NODE   READINESS GATES
@@ -816,7 +817,7 @@ kube-system   metrics-server-6c865bb754-9ms5p            6m           15Mi
 ```
 
 
-## 八、部署Dashboard（按需部署）
+## 八、部署dashboard（按需部署）
 #### 1、调整dashboard镜像仓库地址：
 ```shell
 root@master-1:~# cd k8s-v1.23.9/dashboard-v2.5.1/
@@ -847,14 +848,14 @@ service/dashboard-metrics-scraper created
 deployment.apps/dashboard-metrics-scraper created
 ```
 
-#### 3、创建ServiceAccount账号dashboard-view（该账号只有查看权限）
+#### 3、创建ServiceAccount账号dashboard-view（注意该账号只有查看权限）
 ```shell
 root@master-1:~/k8s-v1.23.9/dashboard-v2.5.1# kubectl apply -f dashboard-view.yaml 
 serviceaccount/dashboard-view created
 clusterrolebinding.rbac.authorization.k8s.io/dashboard-view created
 ```
 
-#### 4、查看pod：
+#### 4、查看pod状态：
 ```shell
 root@master-1:~/k8s-v1.23.9/dashboard-v2.5.1# kubectl get pods -A -o wide
 NAMESPACE              NAME                                         READY   STATUS    RESTARTS      AGE     IP             NODE       NOMINATED NODE   READINESS GATES
@@ -886,13 +887,13 @@ kubernetes-dashboard   dashboard-metrics-scraper   ClusterIP   10.254.133.164   
 kubernetes-dashboard   kubernetes-dashboard        NodePort    10.254.48.190    <none>        443:34168/TCP            3m28s   k8s-app=kubernetes-dashboard
 ```
 
-#### 7、当前集群未添加node，使用master任意ip（ 例如：https://10.0.0.183:34168 ）即可打开dashboard界面：
+#### 7、当前集群暂未添加node，访问master任意ip（ 例如：https://10.0.0.183:34168 ）即可打开dashboard界面：
 ![](./img/dashboard-1.png)
 ![](./img/dashboard-2.png)
 
 
-## 九、给Master添加污点并重启控制平面
-#### 1、master作为集群控制平面一般不会运行负载：
+## 九、master节点添加污点并重启控制平面
+#### 1、master作为集群控制平面一般不会运行工作负载，添加污点禁止用户pod调度到master：
 ```shell
 root@master-1:~# kubectl taint node master-1 node-role.kubernetes.io/master:NoSchedule
 node/master-1 tainted
@@ -902,7 +903,7 @@ root@master-1:~# kubectl taint node master-3 node-role.kubernetes.io/master:NoSc
 node/master-3 tainted
 ```
 
-#### 2、重启后master节点（包括node节点）会自动调整service为ipvs（取决于deb包中自动加载的内核模块）：
+#### 2、重启后master节点自动调整service代理模型为ipvs（取决于deb包中自动加载的内核模块）：
 ```shell
 root@master-1:~# dpkg -c k8s-v1.23.9/pkgs/k8s-kubernetes-node-1.23.9+bionic_amd64.deb | grep k8s.conf
 -rw-r--r-- root/root        28 2022-07-18 16:54 ./etc/modules-load.d/k8s.conf
