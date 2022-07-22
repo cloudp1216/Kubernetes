@@ -1,6 +1,6 @@
 
 
-## 一、部署生产环境Kubernetes集群（基于二进制包）
+## 一、部署生产Kubernetes集群环境（基于二进制包）
 #### 1、环境规划：
 |ID  |服务器IP    |主机名           |系统版本            |
 |:-: |:-:         |:-:              |:-:                 |
@@ -49,7 +49,9 @@ https://github.com/etcd-io/etcd/releases/download/v3.5.4/etcd-v3.5.4-linux-amd64
 
 
 #### 5、基础环境配置（略）：
+- 关闭swqp
 - 配置时间同步
+- 配置主机名
 - 配置master-1到master-2、master-3免密登录
 - 关闭unattended-upgrades自动更新服务
 - 提前安装ipvsadm、ipset
