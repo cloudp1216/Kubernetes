@@ -644,7 +644,7 @@ master-3   NotReady   <none>   69s   v1.23.9   10.0.0.183    <none>        Ubunt
 ```
 
 
-## 五、部署网络插件Calico
+## 五、部署Calico网络插件
 #### 1、调整calico镜像为本地仓库：
 ```shell
 root@master-1:~# cd k8s-v1.23.9/calico-v3.22.3
@@ -766,7 +766,7 @@ kube-system   coredns-54d7c66b75-jwq8j                   1/1     Running   0    
 ```
 
 
-## 七、部署metrics-server
+## 七、部署Metrics Server
 #### 1、部署metrics-server前无法查看集群核心指标：
 ```shell
 root@master-1:~# kubectl top node
@@ -905,7 +905,7 @@ kubernetes-dashboard   kubernetes-dashboard        NodePort    10.254.48.190    
 ![](./img/dashboard-2.png)
 
 
-## 九、master节点添加污点并重启控制平面
+## 九、给Master节点添加污点并重启控制平面
 #### 1、master作为集群控制平面一般不会运行工作负载，添加污点禁止用户pod调度到master：
 ```shell
 root@master-1:~# kubectl taint node master-1 node-role.kubernetes.io/master:NoSchedule
