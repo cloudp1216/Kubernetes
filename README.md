@@ -1,6 +1,6 @@
 
 
-## 一、基于二进制包安装部署生产级别Kubernetes集群
+## 一、基于二进制包安装部署生产级Kubernetes集群
 #### 1、环境规划：
 |ID  |服务器IP    |主机名           |系统版本            |
 |:-: |:-:         |:-:              |:-:                 |
@@ -287,8 +287,8 @@ root      5824     1  2 14:50 ?        00:00:11 /k8s/etcd/bin/etcd --name=etcd-3
 ```
 
 
-## 三、部署Kubernetes集群
-#### 1、分别在master-1、master-2、master-3上安装k8s-kubernetes-master-1.23.9+bionic_amd64.deb、k8s-kubernetes-node-1.23.9+bionic_amd64.deb核心组件：
+## 三、部署kubernetes集群
+#### 1、分别在master-1、master-2、master-3节点安装k8s-kubernetes-master-1.23.9+bionic_amd64.deb、k8s-kubernetes-node-1.23.9+bionic_amd64.deb核心组件：
 ```shell
 root@master-1:~# cd k8s-v1.23.9/pkgs/
 root@master-1:~/k8s-v1.23.9/pkgs# dpkg -i k8s-kubernetes-master-1.23.9+bionic_amd64.deb k8s-kubernetes-node-1.23.9+bionic_amd64.deb 
