@@ -1,10 +1,10 @@
 
 
 ## 一、部署生产Kubernetes集群环境（基于二进制）
-#### 1.架构图：
+#### 1、架构图：
 ![](./img/map.jpg)
 
-#### 2.环境规划：
+#### 2、环境规划：
 |ID  |服务器IP    |主机名           |系统版本            |
 |:-: |:-:         |:-:              |:-:                 |
 |1   |10.0.0.181  |master-1,etcd-1  |Ubuntu 18.04.6 LTS  |
@@ -15,7 +15,7 @@
 |6   |10.0.0.186  |node-3           |Ubuntu 18.04.6 LTS  |
 
 
-#### 3.软件包及相关信息：
+#### 3、软件包及相关信息：
 ```shell
 包信息：
 k8s-v1.23.9/pkgs/k8s-etcd-3.5.4+bionic_amd64.deb                  # 持久状态存储etcd
@@ -37,7 +37,7 @@ https://nginx.org/download/nginx-1.16.1.tar.gz
 https://github.com/etcd-io/etcd/releases/download/v3.5.4/etcd-v3.5.4-linux-amd64.tar.gz
 ```
 
-#### 4.集群默认配置：
+#### 4、集群默认配置：
 - Pod地址池：10.244.0.0/16
 - Service地址池：10.254.0.0/16
 - Service代理模型：ipvs（调度算法默认采用lc）
@@ -46,12 +46,12 @@ https://github.com/etcd-io/etcd/releases/download/v3.5.4/etcd-v3.5.4-linux-amd64
 - Kubernetes和etcd证书默认签发时长：20年
 
 
-#### 5.软件包下载地址：
+#### 5、软件包下载地址：
 链接: https://pan.baidu.com/s/1i1KOWIP.... </p>
 提取码: xxxx
 
 
-#### 6.基础环境配置（略）：
+#### 6、基础环境配置（略）：
 - 关闭swap
 - 配置时间同步
 - 配置时区为Asia/Shanghai
@@ -85,7 +85,7 @@ root@master-1:~/k8s-v1.23.9/docker-ce-v20.10.12# systemctl restart docker
 
 
 ## 二、部署etcd集群
-#### 1.分别在etcd-1、etcd-2、etcd-3节点安装k8s-etcd-3.5.4+bionic_amd64.deb核心组件：
+#### 1、分别在etcd-1、etcd-2、etcd-3节点安装k8s-etcd-3.5.4+bionic_amd64.deb核心组件：
 ```shell
 root@master-1:~# cd k8s-v1.23.9/pkgs/
 root@master-1:~/k8s-v1.23.9/pkgs# dpkg -i k8s-etcd-3.5.4+bionic_amd64.deb
@@ -102,7 +102,7 @@ root@master-1:~/k8s-v1.23.9/pkgs# ssh root@10.0.0.182 'cd /root && dpkg -i k8s-e
 root@master-1:~/k8s-v1.23.9/pkgs# ssh root@10.0.0.183 'cd /root && dpkg -i k8s-etcd-3.5.4+bionic_amd64.deb'
 ```
 
-#### 2.在etcd-1节点初始化etcd证书（注意以双下滑线开头结尾的配置项需要调整）：
+#### 2、在etcd-1节点初始化etcd证书（注意以双下滑线开头结尾的配置项需要调整）：
 ```shell
 root@master-1:~# cd /k8s/etcd/ssl/cfssl-tools
 root@master-1:/k8s/etcd/ssl/cfssl-tools# vi etcd-csr.json
@@ -169,14 +169,14 @@ drwxr-xr-x 2 root root 4.0K Jul 20 14:11 cfssl-tools
 -rw-r--r-- 1 root root 1.5K Jul 20 14:11 peer.pem
 ```
 
-#### 3.分发etcd证书到etcd-2、etcd-3节点：
+#### 3、分发etcd证书到etcd-2、etcd-3节点：
 ```shell
 root@master-1:~# cd /k8s/etcd
 root@master-1:/k8s/etcd# scp -r ssl root@10.0.0.182:/k8s/etcd
 root@master-1:/k8s/etcd# scp -r ssl root@10.0.0.183:/k8s/etcd
 ```
 
-#### 4.分别调整etcd-1、etcd-2、etcd-3节点etcd配置文件：
+#### 4、分别调整etcd-1、etcd-2、etcd-3节点etcd配置文件：
 etcd-1：
 ```shell
 root@master-1:~# cd /k8s/etcd/cfg
@@ -277,7 +277,7 @@ ETCD_PEER_CERT_FILE="/k8s/etcd/ssl/peer.pem"
 ETCD_PEER_KEY_FILE="/k8s/etcd/ssl/peer-key.pem"
 ```
 
-#### 5.分别启动etcd-1、etcd-2、etcd-3节点的etcd服务：
+#### 5、分别启动etcd-1、etcd-2、etcd-3节点的etcd服务：
 ```shell
 root@master-1:~# systemctl start etcd && systemctl enable etcd
 root@master-1:~# ssh root@10.0.0.182 'systemctl start etcd && systemctl enable etcd'
@@ -294,7 +294,7 @@ root      5824     1  2 14:50 ?        00:00:11 /k8s/etcd/bin/etcd --name=etcd-3
 
 
 ## 三、部署kubernetes集群
-#### 1.分别在master-1、master-2、master-3节点安装k8s-kubernetes-master-1.23.9+bionic_amd64.deb、k8s-kubernetes-node-1.23.9+bionic_amd64.deb核心组件：
+#### 1、分别在master-1、master-2、master-3节点安装k8s-kubernetes-master-1.23.9+bionic_amd64.deb、k8s-kubernetes-node-1.23.9+bionic_amd64.deb核心组件：
 ```shell
 root@master-1:~# cd k8s-v1.23.9/pkgs/
 root@master-1:~/k8s-v1.23.9/pkgs# dpkg -i k8s-kubernetes-master-1.23.9+bionic_amd64.deb k8s-kubernetes-node-1.23.9+bionic_amd64.deb 
@@ -315,7 +315,7 @@ root@master-1:~/k8s-v1.23.9/pkgs# ssh root@10.0.0.182 'cd /root && dpkg -i k8s-k
 root@master-1:~/k8s-v1.23.9/pkgs# ssh root@10.0.0.183 'cd /root && dpkg -i k8s-kubernetes-master-1.23.9+bionic_amd64.deb k8s-kubernetes-node-1.23.9+bionic_amd64.deb'
 ```
 
-#### 2.在master-1节点初始化kubernetes集群证书：
+#### 2、在master-1节点初始化kubernetes集群证书：
 ```shell
 root@master-1:~# cd /k8s/kubernetes/ssl/cfssl-tools
 root@master-1:/k8s/kubernetes/ssl/cfssl-tools# vi kube-apiserver-csr.json  # 注意以双下滑线开头结尾的配置项需要调整
@@ -382,14 +382,14 @@ drwxr-xr-x 2 root root 4.0K Jul 20 15:17 cfssl-tools
 -rw-r--r-- 1 root root  451 Jul 20 15:18 sa.pub
 ```
 
-#### 3.分发kubernetes集群证书到master-2、master-3节点：
+#### 3、分发kubernetes集群证书到master-2、master-3节点：
 ```shell
 root@master-1:~# cd /k8s/kubernetes
 root@master-1:/k8s/kubernetes# scp -r ssl root@10.0.0.182:/k8s/kubernetes
 root@master-1:/k8s/kubernetes# scp -r ssl root@10.0.0.183:/k8s/kubernetes
 ```
 
-#### 4.初始化kubeconfig配置文件：
+#### 4、初始化kubeconfig配置文件：
 ```shell
 root@master-1:~# cd /k8s/kubernetes/cfg/init-kubeconfig
 root@master-1:/k8s/kubernetes/cfg/init-kubeconfig# ./init-kubeconfig.sh 
@@ -430,14 +430,14 @@ drwxr-xr-x 2 root root 4.0K Jul 20 15:08 init-kubeconfig
 -rw-r--r-- 1 root root   82 Jul 20 15:31 token.csv
 ```
 
-#### 5.分发kubeconfig配置文件到master-2、master-3节点：
+#### 5、分发kubeconfig配置文件到master-2、master-3节点：
 ```shell
 root@master-1:~# cd /k8s/kubernetes
 root@master-1:/k8s/kubernetes# scp -r cfg root@10.0.0.182:/k8s/kubernetes
 root@master-1:/k8s/kubernetes# scp -r cfg root@10.0.0.183:/k8s/kubernetes
 ```
 
-#### 6.调整master-1、master-2、master-3节点kube-apiserver配置：
+#### 6、调整master-1、master-2、master-3节点kube-apiserver配置：
 master-1：
 ```shell
 root@master-1:~# vi /k8s/kubernetes/cfg/kube-apiserver
@@ -544,33 +544,33 @@ KUBE_APISERVER_ARGS=" \
     --v=2"
 ```
 
-#### 7.启动kube-apiserver：
+#### 7、启动kube-apiserver：
 ```shell
 root@master-1:~# systemctl start kube-apiserver && systemctl enable kube-apiserver
 root@master-1:~# ssh root@10.0.0.182 'systemctl start kube-apiserver && systemctl enable kube-apiserver'
 root@master-1:~# ssh root@10.0.0.183 'systemctl start kube-apiserver && systemctl enable kube-apiserver'
 ```
 
-#### 8.启动kube-controller-manager、kube-scheduler：
+#### 8、启动kube-controller-manager、kube-scheduler：
 ```shell
 root@master-1:~# systemctl start kube-controller-manager kube-scheduler && systemctl enable kube-controller-manager kube-scheduler
 root@master-1:~# ssh root@10.0.0.182 'systemctl start kube-controller-manager kube-scheduler && systemctl enable kube-controller-manager kube-scheduler'
 root@master-1:~# ssh root@10.0.0.183 'systemctl start kube-controller-manager kube-scheduler && systemctl enable kube-controller-manager kube-scheduler'
 ```
 
-#### 9.添加kubernetes可执行程序路径（master-2、master-3也需要）：
+#### 9、添加kubernetes可执行程序路径（master-2、master-3也需要）：
 ```shell
 root@master-1:~# echo 'PATH=$PATH:/k8s/kubernetes/bin' >> /etc/profile
 root@master-1:~# . /etc/profile
 ```
 
-#### 10.生成集群管理员配置（master-2、master-3也需要）：
+#### 10、生成集群管理员配置（master-2、master-3也需要）：
 ```shell
 root@master-1:~# mkdir -p ~/.kube
 root@master-1:~# cp /k8s/kubernetes/cfg/admin.kubeconfig ~/.kube/config
 ```
 
-#### 11.查看集群各组件状态：
+#### 11、查看集群各组件状态：
 ```shell
 root@master-1:~# kubectl get cs
 Warning: v1 ComponentStatus is deprecated in v1.19+
@@ -582,7 +582,7 @@ etcd-2               Healthy   {"health":"true","reason":""}
 etcd-1               Healthy   {"health":"true","reason":""}   
 ```
 
-#### 12.kubelet-bootstrap账号授权：
+#### 12、kubelet-bootstrap账号授权：
 ```shell
 root@master-1:~# kubectl create clusterrolebinding kubelet-bootstrap --clusterrole=system:node-bootstrapper --user=kubelet-bootstrap
 clusterrolebinding.rbac.authorization.k8s.io/kubelet-bootstrap created
@@ -939,5 +939,8 @@ UDP  10.254.0.2:53 lc
   -> 10.244.218.1:53              Masq    1      0          0        
 ```
 
+
+<br />
+（未完..）
 
 
