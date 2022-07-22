@@ -14,7 +14,6 @@
 |5   |10.0.0.185  |node-2           |Ubuntu 18.04.6 LTS  | 
 |6   |10.0.0.186  |node-3           |Ubuntu 18.04.6 LTS  |
 
-
 #### 3、软件包及相关信息：
 ```shell
 包信息：
@@ -46,11 +45,9 @@ https://github.com/etcd-io/etcd/releases/download/v3.5.4/etcd-v3.5.4-linux-amd64
 - Kubernetes和etcd证书默认签发时长：20年
 - Kubelet证书默认签发时长：10年
 
-
 #### 5、软件包下载地址：
-链接: https://pan.baidu.com/s/1i1KOWIP.... </p>
-提取码: xxxx
-
+链接：https://pan.baidu.com/s/1yNE-AcCAGaAhlVf3t3W4GA </p>
+提取码：2tu6
 
 #### 6、基础环境配置（略）：
 - 关闭swap
