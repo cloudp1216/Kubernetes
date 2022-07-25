@@ -15,17 +15,17 @@
 |6   |10.0.0.186  |node-3           |Ubuntu 18.04.6 LTS  |
 
 #### 3、软件包及相关信息：
-|ID  |包信息                                                          |描述  |
-|:-  |:-                                                              |:-    |  
-|1   |k8s-v1.23.9/pkgs/k8s-etcd-3.5.4+bionic_amd64.deb                |持久状态存储etcd  |
-|2   |k8s-v1.23.9/pkgs/k8s-kubernetes-master-1.23.9+bionic_amd64.deb  |master核心组件（kube-apiserver、kube-controller-manager、kube-scheduler）|
-|3   |k8s-v1.23.9/pkgs/k8s-kubernetes-node-1.23.9+bionic_amd64.deb    |node核心组件（kubelet、kube-proxy） |
-|4   |k8s-v1.23.9/pkgs/k8s-slb-1.16.1+bionic_amd64.deb                |服务负载均衡（nginx），代理kubelet、kube-proxy访问kube-apiserver，部署在各node之上 |
-|5   |k8s-v1.23.9/calico-v3.22.3                                      |网络插件calico
-|6   |k8s-v1.23.9/coredns-v1.8.6                                      |服务发现coredns
-|7   |k8s-v1.23.9/dashboard-v2.5.1                                    |集群可视化dashboard |
-|8   |k8s-v1.23.9/docker-ce-v20.10.12                                 |容器服务docker（deb包从阿里云镜像站下载）|
-|9   |k8s-v1.23.9/metrics-server-v0.6.1                               |核心指标监控metrics-server |
+```shell
+包信息：                                                        描述：
+k8s-v1.23.9/pkgs/k8s-etcd-3.5.4+bionic_amd64.deb                持久状态存储etcd
+k8s-v1.23.9/pkgs/k8s-kubernetes-master-1.23.9+bionic_amd64.deb  master核心组件（kube-apiserver、kube-controller-manager、kube-scheduler）
+k8s-v1.23.9/pkgs/k8s-kubernetes-node-1.23.9+bionic_amd64.deb    node核心组件（kubelet、kube-proxy）
+k8s-v1.23.9/pkgs/k8s-slb-1.16.1+bionic_amd64.deb                服务负载均衡（nginx），代理kubelet、kube-proxy访问kube-apiserver，部署在各node之上
+k8s-v1.23.9/calico-v3.22.3                                      网络插件calico
+k8s-v1.23.9/coredns-v1.8.6                                      服务发现coredns
+k8s-v1.23.9/dashboard-v2.5.1                                    集群可视化dashboard
+k8s-v1.23.9/docker-ce-v20.10.12                                 容器服务docker（deb包从阿里云镜像站下载）
+k8s-v1.23.9/metrics-server-v0.6.1                               核心指标监控metrics-server
 
 注意：
 k8s-etcd、k8s-kubernetes-master、k8s-kubernetes-node包中二进制程序由官方下载，此处仅做了二次封装，k8s-slb由nginx-1.16.1.tar.gz源码编译，未更改过任何源代码：
@@ -34,6 +34,7 @@ https://dl.k8s.io/v1.23.9/kubernetes-client-linux-amd64.tar.gz
 https://dl.k8s.io/v1.23.9/kubernetes-node-linux-amd64.tar.gz
 https://nginx.org/download/nginx-1.16.1.tar.gz
 https://github.com/etcd-io/etcd/releases/download/v3.5.4/etcd-v3.5.4-linux-amd64.tar.gz
+```
 
 #### 4、集群默认配置：
 - Pod地址池：10.244.0.0/16
