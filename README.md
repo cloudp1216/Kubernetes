@@ -968,7 +968,7 @@ Setting up k8s-slb (1.16.1+bionic) ...
 
 #### 3、调整slb服务指定kube-apiserver集群地址：
 ```shell
-root@node-1:~# cd /k8s/slb/cfg/nginx.conf.d/
+root@node-1:~# cd /k8s/slb/cfg/nginx.conf.d
 root@node-1:/k8s/slb/cfg/nginx.conf.d# vi kube-apiserver.conf  # 注意所有双下滑杠开头结尾的配置项都需要调整
 
 upstream kube-apiserver {
