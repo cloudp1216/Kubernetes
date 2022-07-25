@@ -20,7 +20,7 @@
 k8s-v1.23.9/pkgs/k8s-etcd-3.5.4+bionic_amd64.deb                持久状态存储etcd
 k8s-v1.23.9/pkgs/k8s-kubernetes-master-1.23.9+bionic_amd64.deb  master核心组件（kube-apiserver、kube-controller-manager、kube-scheduler）
 k8s-v1.23.9/pkgs/k8s-kubernetes-node-1.23.9+bionic_amd64.deb    node核心组件（kubelet、kube-proxy）
-k8s-v1.23.9/pkgs/k8s-slb-1.16.1+bionic_amd64.deb                服务负载均衡（nginx），代理kubelet、kube-proxy访问kube-apiserver，部署在各node之上
+k8s-v1.23.9/pkgs/k8s-slb-1.16.1+bionic_amd64.deb                服务负载均衡（nginx四层代理），部署在各node之上，代理kubelet、kube-proxy访问kube-apiserver
 k8s-v1.23.9/calico-v3.22.3                                      网络插件calico
 k8s-v1.23.9/coredns-v1.8.6                                      服务发现coredns
 k8s-v1.23.9/dashboard-v2.5.1                                    集群可视化dashboard
