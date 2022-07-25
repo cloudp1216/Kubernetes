@@ -903,7 +903,7 @@ kubernetes-dashboard   kubernetes-dashboard        NodePort    10.254.48.190    
 
 
 ## 九、给Master节点添加污点并重启控制平面
-#### 1、master作为集群控制平面一般不会运行工作负载，添加污点禁止用户pod调度到master：
+#### 1、给master节点添加污点，master作为集群控制平面一般不会运行工作负载，对于未容忍污点的用户pod应禁止调度到master节点：
 ```shell
 root@master-1:~# kubectl taint node master-1 node-role.kubernetes.io/master:NoSchedule
 node/master-1 tainted
