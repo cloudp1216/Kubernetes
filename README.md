@@ -60,24 +60,31 @@ https://github.com/etcd-io/etcd/releases/download/v3.5.4/etcd-v3.5.4-linux-amd64
 - 提前安装私有镜像仓库Harbor（当前Harbor域名解析为：hub.speech.local）
 - 添加各节点DNS解析或调整本地hosts文件：
 ```shell
-root@master-1:~# vi /etc/hosts
+root@master-1:~# cat >> /etc/hosts <<EOF
 10.0.0.181      master-1 etcd-1
 10.0.0.182      master-2 etcd-2
 10.0.0.183      master-3 etcd-3
 10.0.0.184      node-1
 10.0.0.185      node-2
 10.0.0.186      node-3
+EOF
 ```
 - 安装配置Docker（各个节点都需要）：
 ```shell
 root@master-1:~# tar zxf k8s-v1.23.9.tar.gz
 root@master-1:~# cd k8s-v1.23.9/docker-ce-v20.10.12/
 root@master-1:~/k8s-v1.23.9/docker-ce-v20.10.12# dpkg -i *.deb
-root@master-1:~/k8s-v1.23.9/docker-ce-v20.10.12# vi /etc/docker/daemon.json
+root@master-1:~/k8s-v1.23.9/docker-ce-v20.10.12# cat > /etc/docker/daemon.json <<EOF
 {
     "exec-opts": ["native.cgroupdriver=systemd"],
+    "log-driver": "json-file",
+    "log-opts": {
+        "max-size": "100m"
+    },
+    "storage-driver": "overlay2",
     "insecure-registries": ["hub.speech.local"]
 }
+EOF
 root@master-1:~/k8s-v1.23.9/docker-ce-v20.10.12# systemctl restart docker
 ```
 
@@ -763,7 +770,7 @@ kube-system   coredns-54d7c66b75-jwq8j                   1/1     Running   0    
 ```
 
 
-## 七、部署Metrics Server
+## 七、部署MetricsServer
 #### 1、部署metrics-server前无法查看集群核心指标：
 ```shell
 root@master-1:~# kubectl top node
@@ -827,7 +834,7 @@ kube-system   metrics-server-6c865bb754-9ms5p            6m           15Mi
 ```
 
 
-## 八、部署Dashboard（按需部署）
+## 八、部署Dashboard
 #### 1、调整dashboard镜像仓库地址：
 ```shell
 root@master-1:~# cd k8s-v1.23.9/dashboard-v2.5.1/
