@@ -945,11 +945,132 @@ UDP  10.254.0.2:53 lc
 ```
 
 
-## 十、添加Node节点到集群
+## 十、添加Node节点到集群（其它Node操作一致）
+#### 1、复制k8s-kubernetes-node-1.23.9+bionic_amd64.deb、k8s-slb-1.16.1+bionic_amd64.deb到node节点：
+```shell
+root@master-1:~# cd k8s-v1.23.9/pkgs
+root@master-1:~/k8s-v1.23.9/pkgs# scp k8s-kubernetes-node-1.23.9+bionic_amd64.deb k8s-slb-1.16.1+bionic_amd64.deb root@10.0.0.184:/root
+```
 
+#### 2、在node节点安装以下软件包：
+```shell
+root@node-1:~# dpkg -i k8s-kubernetes-node-1.23.9+bionic_amd64.deb k8s-slb-1.16.1+bionic_amd64.deb 
+Selecting previously unselected package k8s-kubernetes-node.
+(Reading database ... 66815 files and directories currently installed.)
+Preparing to unpack k8s-kubernetes-node-1.23.9+bionic_amd64.deb ...
+Unpacking k8s-kubernetes-node (1.23.9+bionic) ...
+Selecting previously unselected package k8s-slb.
+Preparing to unpack k8s-slb-1.16.1+bionic_amd64.deb ...
+Unpacking k8s-slb (1.16.1+bionic) ...
+Setting up k8s-kubernetes-node (1.23.9+bionic) ...
+Setting up k8s-slb (1.16.1+bionic) ...
+```
 
+#### 3、调整slb服务指定kube-apiserver集群地址：
+```shell
+root@node-1:~# cd /k8s/slb/cfg/nginx.conf.d/
+root@node-1:/k8s/slb/cfg/nginx.conf.d# vi kube-apiserver.conf  # 注意所有双下滑杠开头结尾的配置项都需要调整
 
-<br />
-（未完 ...）
+upstream kube-apiserver {
+    least_conn;
+    server 10.0.0.181:6443;
+    server 10.0.0.182:6443;
+    server 10.0.0.183:6443;
+}
+
+server {
+    listen 127.0.0.1:6443;
+    proxy_pass kube-apiserver;
+    proxy_timeout 10s;
+}
+
+```
+
+#### 4、启动slb服务：
+```shell
+root@node-1:~# systemctl start slb && systemctl enable slb
+root@node-1:~# ss -lnt | grep 6443
+LISTEN   0         128               127.0.0.1:6443             0.0.0.0:* 
+```
+
+#### 5、从master复制bootstrap.kubeconfig、kube-proxy.kubeconfig到node节点：
+```shell
+root@master-1:~# cd /k8s/kubernetes/cfg/
+root@master-1:/k8s/kubernetes/cfg# scp bootstrap.kubeconfig kube-proxy.kubeconfig root@10.0.0.184:/k8s/kubernetes/cfg
+```
+
+#### 6、调整kubelet配置文件：
+```shell
+root@node-1:~# vi /k8s/kubernetes/cfg/kubelet
+KUBELET_ARGS=" \
+    --bootstrap-kubeconfig=/k8s/kubernetes/cfg/bootstrap.kubeconfig \
+    --kubeconfig=/k8s/kubernetes/cfg/kubelet.kubeconfig \
+    --cgroup-driver=systemd \
+    --kubelet-cgroups=/systemd/system.slice \
+    --runtime-cgroups=/systemd/system.slice \
+    --network-plugin=cni \
+    --cluster-dns=10.254.0.2 \
+    --cluster-domain=cluster.local \
+    --fail-swap-on=false \
+    --cert-dir=/k8s/kubernetes/ssl \
+    --hairpin-mode=promiscuous-bridge \
+    --serialize-image-pulls=false \
+    --pod-infra-container-image=hub.speech.local/k8s.gcr.io/pause:3.6 \   # 调整此项，pause镜像要提前推送到本地镜像仓库
+    --logtostderr=true \
+    --v=2"
+```
+
+#### 7、启动kubelet、kube-proxy：
+```shell
+root@node-1:~# systemctl start kubelet kube-proxy && systemctl enable kubelet kube-proxy
+```
+
+#### 8、允许node加入集群（在master执行）：
+```shell
+root@master-1:~# kubectl get csr
+NAME                                                   AGE   SIGNERNAME                                    REQUESTOR           REQUESTEDDURATION   CONDITION
+node-csr-_EAK70MenWon3_8k2lBv4AgnynLEat-0fdrOXP15PHA   2m    kubernetes.io/kube-apiserver-client-kubelet   kubelet-bootstrap   <none>              Pending
+root@master-1:~# kubectl certificate approve node-csr-_EAK70MenWon3_8k2lBv4AgnynLEat-0fdrOXP15PHA
+certificatesigningrequest.certificates.k8s.io/node-csr-_EAK70MenWon3_8k2lBv4AgnynLEat-0fdrOXP15PHA approved
+```
+
+#### 9、查看node节点状态：
+```shell
+root@master-1:~# kubectl get node -o wide
+NAME       STATUS   ROLES    AGE     VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION       CONTAINER-RUNTIME
+master-1   Ready    <none>   4d23h   v1.23.9   10.0.0.181    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
+master-2   Ready    <none>   4d23h   v1.23.9   10.0.0.182    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
+master-3   Ready    <none>   4d23h   v1.23.9   10.0.0.183    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
+node-1     Ready    <none>   56s     v1.23.9   10.0.0.184    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
+```
+
+#### 10、重启node节点，service代理模型自动调整为ipvs：
+```shell
+root@node-1:~# ipvsadm -ln
+IP Virtual Server version 1.2.1 (size=4096)
+Prot LocalAddress:Port Scheduler Flags
+  -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
+TCP  10.0.0.184:34168 lc
+  -> 10.244.65.9:8443             Masq    1      0          0         
+TCP  10.254.0.1:443 lc
+  -> 10.0.0.181:6443              Masq    1      1          0         
+  -> 10.0.0.182:6443              Masq    1      1          0         
+  -> 10.0.0.183:6443              Masq    1      0          1         
+TCP  10.254.0.2:53 lc
+  -> 10.244.65.10:53              Masq    1      0          0         
+  -> 10.244.218.20:53             Masq    1      0          0         
+TCP  10.254.0.2:9153 lc
+  -> 10.244.65.10:9153            Masq    1      0          0         
+  -> 10.244.218.20:9153           Masq    1      0          0         
+TCP  10.254.48.190:443 lc
+  -> 10.244.65.9:8443             Masq    1      0          0         
+TCP  10.254.133.164:8000 lc
+  -> 10.244.57.5:8000             Masq    1      0          0         
+TCP  10.254.157.176:443 lc
+  -> 10.244.218.21:4443           Masq    1      0          0         
+UDP  10.254.0.2:53 lc
+  -> 10.244.65.10:53              Masq    1      0          0         
+  -> 10.244.218.20:53             Masq    1      0          0         
+```
 
 
