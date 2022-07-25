@@ -995,7 +995,7 @@ LISTEN   0         128               127.0.0.1:6443             0.0.0.0:*
 
 #### 5、从master复制bootstrap.kubeconfig、kube-proxy.kubeconfig到node节点：
 ```shell
-root@master-1:~# cd /k8s/kubernetes/cfg/
+root@master-1:~# cd /k8s/kubernetes/cfg
 root@master-1:/k8s/kubernetes/cfg# scp bootstrap.kubeconfig kube-proxy.kubeconfig root@10.0.0.184:/k8s/kubernetes/cfg
 ```
 
