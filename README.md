@@ -82,7 +82,7 @@ root@master-1:~/k8s-v1.23.9/docker-ce-v20.10.12# systemctl restart docker
 ```
 
 
-## 二、部署etcd集群
+## 二、部署ETCD集群
 #### 1、分别在etcd-1、etcd-2、etcd-3节点安装k8s-etcd-3.5.4+bionic_amd64.deb核心组件：
 ```shell
 root@master-1:~# cd k8s-v1.23.9/pkgs/
@@ -291,7 +291,7 @@ root      5824     1  2 14:50 ?        00:00:11 /k8s/etcd/bin/etcd --name=etcd-3
 ```
 
 
-## 三、部署kubernetes集群
+## 三、部署Kubernetes集群
 #### 1、分别在master-1、master-2、master-3节点安装k8s-kubernetes-master-1.23.9+bionic_amd64.deb、k8s-kubernetes-node-1.23.9+bionic_amd64.deb核心组件：
 ```shell
 root@master-1:~# cd k8s-v1.23.9/pkgs/
@@ -587,7 +587,7 @@ clusterrolebinding.rbac.authorization.k8s.io/kubelet-bootstrap created
 ```
 
 
-## 四、添加master节点到集群
+## 四、添加Master节点到集群
 #### 1、调整kubelet配置文件（master-2、master-3也需要调整）：
 ```shell
 root@master-1:~# vi /k8s/kubernetes/cfg/kubelet
