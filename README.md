@@ -16,7 +16,7 @@
 
 #### 3、软件包及相关信息：
 ```shell
-包信息：                                                        描述：
+包信息：                                                         描述：
 k8s-v1.23.9/pkgs/k8s-etcd-3.5.4+bionic_amd64.deb                持久状态存储etcd
 k8s-v1.23.9/pkgs/k8s-kubernetes-master-1.23.9+bionic_amd64.deb  master核心组件（kube-apiserver、kube-controller-manager、kube-scheduler）
 k8s-v1.23.9/pkgs/k8s-kubernetes-node-1.23.9+bionic_amd64.deb    node核心组件（kubelet、kube-proxy）
