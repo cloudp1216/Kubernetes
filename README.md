@@ -1034,7 +1034,7 @@ root@master-1:~# kubectl certificate approve node-csr-_EAK70MenWon3_8k2lBv4Agnyn
 certificatesigningrequest.certificates.k8s.io/node-csr-_EAK70MenWon3_8k2lBv4AgnynLEat-0fdrOXP15PHA approved
 ```
 
-#### 9、查看node节点状态：
+#### 9、查看node状态：
 ```shell
 root@master-1:~# kubectl get node -o wide
 NAME       STATUS   ROLES    AGE     VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION       CONTAINER-RUNTIME
@@ -1071,6 +1071,18 @@ TCP  10.254.157.176:443 lc
 UDP  10.254.0.2:53 lc
   -> 10.244.65.10:53              Masq    1      0          0         
   -> 10.244.218.20:53             Masq    1      0          0         
+```
+
+#### 11、按照以上操作分别添加node-2、node-3后node状态：
+```shell
+root@master-1:~# kubectl get node -o wide
+NAME       STATUS   ROLES    AGE   VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION       CONTAINER-RUNTIME
+master-1   Ready    <none>   5d    v1.23.9   10.0.0.181    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
+master-2   Ready    <none>   5d    v1.23.9   10.0.0.182    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
+master-3   Ready    <none>   5d    v1.23.9   10.0.0.183    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
+node-1     Ready    <none>   42m   v1.23.9   10.0.0.184    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
+node-2     Ready    <none>   26m   v1.23.9   10.0.0.185    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
+node-3     Ready    <none>   11m   v1.23.9   10.0.0.186    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
 ```
 
 
