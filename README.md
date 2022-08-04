@@ -765,8 +765,8 @@ kube-system   calico-kube-controllers-867987dd7c-9zr9f   1/1     Running   0    
 kube-system   calico-node-4qnm5                          1/1     Running   0          21m   10.0.0.182     master-2   <none>           <none>
 kube-system   calico-node-9vbc8                          1/1     Running   0          21m   10.0.0.183     master-3   <none>           <none>
 kube-system   calico-node-d92c8                          1/1     Running   0          21m   10.0.0.181     master-1   <none>           <none>
-kube-system   coredns-54d7c66b75-glmmz                   1/1     Running   0          22s   10.244.218.0   master-1   <none>           <none>
-kube-system   coredns-54d7c66b75-jwq8j                   1/1     Running   0          22s   10.244.65.0    master-3   <none>           <none>
+kube-system   coredns-54d7c66b75-glmmz                   1/1     Running   0          22s   10.244.1.3     master-1   <none>           <none>
+kube-system   coredns-54d7c66b75-jwq8j                   1/1     Running   0          22s   10.244.2.2     master-3   <none>           <none>
 ```
 
 
@@ -810,9 +810,9 @@ kube-system   calico-kube-controllers-867987dd7c-9zr9f   1/1     Running   1 (32
 kube-system   calico-node-4qnm5                          1/1     Running   1 (32m ago)   62m   10.0.0.182     master-2   <none>           <none>
 kube-system   calico-node-9vbc8                          1/1     Running   1 (32m ago)   62m   10.0.0.183     master-3   <none>           <none>
 kube-system   calico-node-d92c8                          1/1     Running   1 (32m ago)   62m   10.0.0.181     master-1   <none>           <none>
-kube-system   coredns-54d7c66b75-glmmz                   1/1     Running   1 (32m ago)   42m   10.244.218.1   master-1   <none>           <none>
-kube-system   coredns-54d7c66b75-jwq8j                   1/1     Running   1 (31m ago)   42m   10.244.65.1    master-3   <none>           <none>
-kube-system   metrics-server-6c865bb754-9ms5p            1/1     Running   0             59s   10.244.218.2   master-1   <none>           <none>
+kube-system   coredns-54d7c66b75-glmmz                   1/1     Running   1 (32m ago)   42m   10.244.1.3     master-1   <none>           <none>
+kube-system   coredns-54d7c66b75-jwq8j                   1/1     Running   1 (31m ago)   42m   10.244.2.2     master-3   <none>           <none>
+kube-system   metrics-server-6c865bb754-9ms5p            1/1     Running   0             59s   10.244.0.2     master-2   <none>           <none>
 ```
 
 #### 5、查看核心指标：
@@ -880,11 +880,11 @@ kube-system            calico-kube-controllers-867987dd7c-9zr9f     1/1     Runn
 kube-system            calico-node-4qnm5                            1/1     Running   1 (47m ago)   77m     10.0.0.182     master-2   <none>           <none>
 kube-system            calico-node-9vbc8                            1/1     Running   1 (47m ago)   77m     10.0.0.183     master-3   <none>           <none>
 kube-system            calico-node-d92c8                            1/1     Running   1 (47m ago)   77m     10.0.0.181     master-1   <none>           <none>
-kube-system            coredns-54d7c66b75-glmmz                     1/1     Running   1 (47m ago)   57m     10.244.218.1   master-1   <none>           <none>
-kube-system            coredns-54d7c66b75-jwq8j                     1/1     Running   1 (46m ago)   57m     10.244.65.1    master-3   <none>           <none>
-kube-system            metrics-server-6c865bb754-9ms5p              1/1     Running   0             15m     10.244.218.2   master-1   <none>           <none>
-kubernetes-dashboard   dashboard-metrics-scraper-57865dcc68-z6qrf   1/1     Running   0             6m15s   10.244.57.0    master-2   <none>           <none>
-kubernetes-dashboard   kubernetes-dashboard-6647b9b8d8-tr65p        1/1     Running   0             6m15s   10.244.65.2    master-3   <none>           <none>
+kube-system            coredns-54d7c66b75-glmmz                     1/1     Running   1 (47m ago)   57m     10.244.1.3     master-1   <none>           <none>
+kube-system            coredns-54d7c66b75-jwq8j                     1/1     Running   1 (46m ago)   57m     10.244.2.2     master-3   <none>           <none>
+kube-system            metrics-server-6c865bb754-9ms5p              1/1     Running   0             15m     10.244.0.2     master-2   <none>           <none>
+kubernetes-dashboard   dashboard-metrics-scraper-57865dcc68-z6qrf   1/1     Running   0             6m15s   10.244.1.4     master-1   <none>           <none>
+kubernetes-dashboard   kubernetes-dashboard-6647b9b8d8-tr65p        1/1     Running   0             6m15s   10.244.0.3     master-2   <none>           <none>
 ```
 
 #### 5、获取dashboard-view账号token值：
