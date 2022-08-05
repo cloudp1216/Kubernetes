@@ -21,7 +21,7 @@ k8s-v1.23.9/pkgs/k8s-etcd-3.5.4+bionic_amd64.deb                持久状态存�
 k8s-v1.23.9/pkgs/k8s-kubernetes-master-1.23.9+bionic_amd64.deb  master核心组件（kube-apiserver、kube-controller-manager、kube-scheduler）
 k8s-v1.23.9/pkgs/k8s-kubernetes-node-1.23.9+bionic_amd64.deb    node核心组件（kubelet、kube-proxy）
 k8s-v1.23.9/pkgs/k8s-slb-1.16.1+bionic_amd64.deb                服务负载均衡（nginx四层代理），部署在各node之上，代理kubelet、kube-proxy访问kube-apiserver
-k8s-v1.23.9/calico-v3.22.3                                      网络插件calico
+k8s-v1.23.9/calico-v3.22.4                                      网络插件calico
 k8s-v1.23.9/coredns-v1.8.6                                      服务发现coredns
 k8s-v1.23.9/dashboard-v2.5.1                                    集群可视化dashboard
 k8s-v1.23.9/docker-ce-v20.10.12                                 容器服务docker（deb包从阿里云镜像站下载）
@@ -651,49 +651,43 @@ master-3   NotReady   <none>   69s   v1.23.9   10.0.0.183    <none>        Ubunt
 ## 五、部署Calico网络插件
 #### 1、调整calico镜像为本地仓库：
 ```shell
-root@master-1:~# cd k8s-v1.23.9/calico-v3.22.3
+root@master-1:~# cd k8s-v1.23.9/calico-v3.22.4
 root@master-1:~# cat calico.yaml | grep image -n
-235:          image: docker.io/calico/cni:v3.22.3
-279:          image: docker.io/calico/pod2daemon-flexvol:v3.22.3
-290:          image: docker.io/calico/node:v3.22.3
-535:          image: docker.io/calico/kube-controllers:v3.22.3
+4198:          image: docker.io/calico/cni:v3.22.4
+4225:          image: docker.io/calico/cni:v3.22.4
+4266:          image: docker.io/calico/pod2daemon-flexvol:v3.22.4
+4277:          image: docker.io/calico/node:v3.22.4
+4502:          image: docker.io/calico/kube-controllers:v3.22.4
 root@master-1:~/k8s-v1.23.9/calico-v3.22.3# vi calico.yaml                # 将镜像调整为以下（镜像要提前下载并推送到本地镜像仓库）：              
-235:          image: hub.speech.local/calico/cni:v3.22.3
-279:          image: hub.speech.local/calico/pod2daemon-flexvol:v3.22.3
-290:          image: hub.speech.local/calico/node:v3.22.3
-535:          image: hub.speech.local/calico/kube-controllers:v3.22.3
+4198:          image: hub.speech.local/calico/cni:v3.22.4
+4225:          image: hub.speech.local/calico/cni:v3.22.4
+4266:          image: hub.speech.local/calico/pod2daemon-flexvol:v3.22.4
+4277:          image: hub.speech.local/calico/node:v3.22.4
+4502:          image: hub.speech.local/calico/kube-controllers:v3.22.4
 ```
 
-#### 2、设置etcd集群地址：
-```shell
-root@master-1:~/k8s-v1.23.9/calico-v3.22.3# ETCD_ENDPOINTS="https://10.0.0.181:2379,https://10.0.0.182:2379,https://10.0.0.183:2379"
-root@master-1:~/k8s-v1.23.9/calico-v3.22.3# sed -i "s#.*etcd_endpoints:.*#  etcd_endpoints: \"${ETCD_ENDPOINTS}\"#g" calico.yaml
-```
-
-#### 3、设置etcd证书：
-```shell
-root@master-1:~/k8s-v1.23.9/calico-v3.22.3# ETCD_CA=`cat /k8s/etcd/ssl/ca.pem | base64 | tr -d '\n'`
-root@master-1:~/k8s-v1.23.9/calico-v3.22.3# ETCD_CERT=`cat /k8s/etcd/ssl/etcd.pem | base64 | tr -d '\n'`
-root@master-1:~/k8s-v1.23.9/calico-v3.22.3# ETCD_KEY=`cat /k8s/etcd/ssl/etcd-key.pem | base64 | tr -d '\n'`
-root@master-1:~/k8s-v1.23.9/calico-v3.22.3# sed -i "s#.*etcd-ca:.*#  etcd-ca: ${ETCD_CA}#g" calico.yaml
-root@master-1:~/k8s-v1.23.9/calico-v3.22.3# sed -i "s#.*etcd-cert:.*#  etcd-cert: ${ETCD_CERT}#g" calico.yaml
-root@master-1:~/k8s-v1.23.9/calico-v3.22.3# sed -i "s#.*etcd-key:.*#  etcd-key: ${ETCD_KEY}#g" calico.yaml
-root@master-1:~/k8s-v1.23.9/calico-v3.22.3# sed -i 's#.*etcd_ca:.*#  etcd_ca: "/calico-secrets/etcd-ca"#g' calico.yaml
-root@master-1:~/k8s-v1.23.9/calico-v3.22.3# sed -i 's#.*etcd_cert:.*#  etcd_cert: "/calico-secrets/etcd-cert"#g' calico.yaml
-root@master-1:~/k8s-v1.23.9/calico-v3.22.3# sed -i 's#.*etcd_key:.*#  etcd_key: "/calico-secrets/etcd-key"#g' calico.yaml
-```
-
-#### 4、设置pod地址池（默认地址池为10.244.0.0/16，如需调整请确保kube-proxy、kube-controller-manager配置一致）：
-```shell
-root@master-1:~/k8s-v1.23.9/calico-v3.22.3# CALICO_IPV4POOL_CIDR="10.244.0.0/16"
-root@master-1:~/k8s-v1.23.9/calico-v3.22.3# sed -i "s#192.168.0.0/16#${CALICO_IPV4POOL_CIDR}#g" calico.yaml
-```
-
-#### 5、创建calico资源：
+#### 2、创建calico资源：
 ```shell
 root@master-1:~/k8s-v1.23.9/calico-v3.22.3# kubectl apply -f calico.yaml
-secret/calico-etcd-secrets created
+root@master-1:~# kubectl apply -f calico.yaml 
 configmap/calico-config created
+customresourcedefinition.apiextensions.k8s.io/bgpconfigurations.crd.projectcalico.org created
+customresourcedefinition.apiextensions.k8s.io/bgppeers.crd.projectcalico.org created
+customresourcedefinition.apiextensions.k8s.io/blockaffinities.crd.projectcalico.org created
+customresourcedefinition.apiextensions.k8s.io/caliconodestatuses.crd.projectcalico.org created
+customresourcedefinition.apiextensions.k8s.io/clusterinformations.crd.projectcalico.org created
+customresourcedefinition.apiextensions.k8s.io/felixconfigurations.crd.projectcalico.org created
+customresourcedefinition.apiextensions.k8s.io/globalnetworkpolicies.crd.projectcalico.org created
+customresourcedefinition.apiextensions.k8s.io/globalnetworksets.crd.projectcalico.org created
+customresourcedefinition.apiextensions.k8s.io/hostendpoints.crd.projectcalico.org created
+customresourcedefinition.apiextensions.k8s.io/ipamblocks.crd.projectcalico.org created
+customresourcedefinition.apiextensions.k8s.io/ipamconfigs.crd.projectcalico.org created
+customresourcedefinition.apiextensions.k8s.io/ipamhandles.crd.projectcalico.org created
+customresourcedefinition.apiextensions.k8s.io/ippools.crd.projectcalico.org created
+customresourcedefinition.apiextensions.k8s.io/ipreservations.crd.projectcalico.org created
+customresourcedefinition.apiextensions.k8s.io/kubecontrollersconfigurations.crd.projectcalico.org created
+customresourcedefinition.apiextensions.k8s.io/networkpolicies.crd.projectcalico.org created
+customresourcedefinition.apiextensions.k8s.io/networksets.crd.projectcalico.org created
 clusterrole.rbac.authorization.k8s.io/calico-kube-controllers created
 clusterrolebinding.rbac.authorization.k8s.io/calico-kube-controllers created
 clusterrole.rbac.authorization.k8s.io/calico-node created
@@ -709,7 +703,7 @@ poddisruptionbudget.policy/calico-kube-controllers created
 ```shell
 root@master-1:~# kubectl get pods -A -o wide
 NAMESPACE     NAME                                       READY   STATUS    RESTARTS   AGE    IP           NODE       NOMINATED NODE   READINESS GATES
-kube-system   calico-kube-controllers-867987dd7c-9zr9f   1/1     Running   0          2m6s   10.0.0.182   master-2   <none>           <none>
+kube-system   calico-kube-controllers-867987dd7c-9zr9f   1/1     Running   0          2m6s   10.244.0.2   master-2   <none>           <none>
 kube-system   calico-node-4qnm5                          1/1     Running   0          2m6s   10.0.0.182   master-2   <none>           <none>
 kube-system   calico-node-9vbc8                          1/1     Running   0          2m6s   10.0.0.183   master-3   <none>           <none>
 kube-system   calico-node-d92c8                          1/1     Running   0          2m6s   10.0.0.181   master-1   <none>           <none>
@@ -761,7 +755,7 @@ service/kube-dns created
 ```shell
 root@master-1:~/k8s-v1.23.9/coredns-v1.8.6# kubectl get pods -A -o wide
 NAMESPACE     NAME                                       READY   STATUS    RESTARTS   AGE   IP             NODE       NOMINATED NODE   READINESS GATES
-kube-system   calico-kube-controllers-867987dd7c-9zr9f   1/1     Running   0          21m   10.0.0.182     master-2   <none>           <none>
+kube-system   calico-kube-controllers-867987dd7c-9zr9f   1/1     Running   0          21m   10.244.0.2     master-2   <none>           <none>
 kube-system   calico-node-4qnm5                          1/1     Running   0          21m   10.0.0.182     master-2   <none>           <none>
 kube-system   calico-node-9vbc8                          1/1     Running   0          21m   10.0.0.183     master-3   <none>           <none>
 kube-system   calico-node-d92c8                          1/1     Running   0          21m   10.0.0.181     master-1   <none>           <none>
@@ -806,13 +800,13 @@ apiservice.apiregistration.k8s.io/v1beta1.metrics.k8s.io created
 ```shell
 root@master-1:~# kubectl get pods -A -o wide
 NAMESPACE     NAME                                       READY   STATUS    RESTARTS      AGE   IP             NODE       NOMINATED NODE   READINESS GATES
-kube-system   calico-kube-controllers-867987dd7c-9zr9f   1/1     Running   1 (32m ago)   62m   10.0.0.182     master-2   <none>           <none>
+kube-system   calico-kube-controllers-867987dd7c-9zr9f   1/1     Running   1 (32m ago)   62m   10.244.0.2     master-2   <none>           <none>
 kube-system   calico-node-4qnm5                          1/1     Running   1 (32m ago)   62m   10.0.0.182     master-2   <none>           <none>
 kube-system   calico-node-9vbc8                          1/1     Running   1 (32m ago)   62m   10.0.0.183     master-3   <none>           <none>
 kube-system   calico-node-d92c8                          1/1     Running   1 (32m ago)   62m   10.0.0.181     master-1   <none>           <none>
 kube-system   coredns-54d7c66b75-glmmz                   1/1     Running   1 (32m ago)   42m   10.244.1.2     master-1   <none>           <none>
 kube-system   coredns-54d7c66b75-jwq8j                   1/1     Running   1 (31m ago)   42m   10.244.2.2     master-3   <none>           <none>
-kube-system   metrics-server-6c865bb754-9ms5p            1/1     Running   0             59s   10.244.0.2     master-2   <none>           <none>
+kube-system   metrics-server-6c865bb754-9ms5p            1/1     Running   0             59s   10.244.0.3     master-2   <none>           <none>
 ```
 
 #### 5、查看核心指标：
@@ -876,15 +870,15 @@ clusterrolebinding.rbac.authorization.k8s.io/dashboard-view created
 ```shell
 root@master-1:~/k8s-v1.23.9/dashboard-v2.5.1# kubectl get pods -A -o wide
 NAMESPACE              NAME                                         READY   STATUS    RESTARTS      AGE     IP             NODE       NOMINATED NODE   READINESS GATES
-kube-system            calico-kube-controllers-867987dd7c-9zr9f     1/1     Running   1 (47m ago)   77m     10.0.0.182     master-2   <none>           <none>
+kube-system            calico-kube-controllers-867987dd7c-9zr9f     1/1     Running   1 (47m ago)   77m     10.244.0.2     master-2   <none>           <none>
 kube-system            calico-node-4qnm5                            1/1     Running   1 (47m ago)   77m     10.0.0.182     master-2   <none>           <none>
 kube-system            calico-node-9vbc8                            1/1     Running   1 (47m ago)   77m     10.0.0.183     master-3   <none>           <none>
 kube-system            calico-node-d92c8                            1/1     Running   1 (47m ago)   77m     10.0.0.181     master-1   <none>           <none>
 kube-system            coredns-54d7c66b75-glmmz                     1/1     Running   1 (47m ago)   57m     10.244.1.2     master-1   <none>           <none>
 kube-system            coredns-54d7c66b75-jwq8j                     1/1     Running   1 (46m ago)   57m     10.244.2.2     master-3   <none>           <none>
-kube-system            metrics-server-6c865bb754-9ms5p              1/1     Running   0             15m     10.244.0.2     master-2   <none>           <none>
+kube-system            metrics-server-6c865bb754-9ms5p              1/1     Running   0             15m     10.244.0.3     master-2   <none>           <none>
 kubernetes-dashboard   dashboard-metrics-scraper-57865dcc68-z6qrf   1/1     Running   0             6m15s   10.244.1.3     master-1   <none>           <none>
-kubernetes-dashboard   kubernetes-dashboard-6647b9b8d8-tr65p        1/1     Running   0             6m15s   10.244.0.3     master-2   <none>           <none>
+kubernetes-dashboard   kubernetes-dashboard-6647b9b8d8-tr65p        1/1     Running   0             6m15s   10.244.0.4     master-2   <none>           <none>
 ```
 
 #### 5、获取dashboard-view账号token值：
