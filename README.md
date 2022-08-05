@@ -46,8 +46,8 @@ https://github.com/etcd-io/etcd/releases/download/v3.5.4/etcd-v3.5.4-linux-amd64
 - Kubelet证书默认签发时长：10年
 
 #### 5、软件包下载地址：
-链接：https://pan.baidu.com/s/1prhT5tN_7_p4MH4K-fpDpA </p>
-提取码：i4wl
+链接：https://pan.baidu.com/s/1bO0WqBn_EKbxg49B_Obm0w </p>
+提取码：m05d
 
 #### 6、基础环境配置（略）：
 - 关闭swap
@@ -699,7 +699,7 @@ serviceaccount/calico-kube-controllers created
 poddisruptionbudget.policy/calico-kube-controllers created
 ```
 
-#### 6、查看pod状态：
+#### 3、查看pod状态：
 ```shell
 root@master-1:~# kubectl get pods -A -o wide
 NAMESPACE     NAME                                       READY   STATUS    RESTARTS   AGE    IP           NODE       NOMINATED NODE   READINESS GATES
@@ -709,7 +709,7 @@ kube-system   calico-node-9vbc8                          1/1     Running   0    
 kube-system   calico-node-d92c8                          1/1     Running   0          2m6s   10.0.0.181   master-1   <none>           <none>
 ```
 
-#### 7、再次查看node状态：
+#### 4、再次查看node状态：
 ```shell
 root@master-1:~# kubectl get node -o wide
 NAME       STATUS   ROLES    AGE   VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION       CONTAINER-RUNTIME
