@@ -658,7 +658,7 @@ root@master-1:~# cat calico.yaml | grep image -n
 4266:          image: docker.io/calico/pod2daemon-flexvol:v3.22.4
 4277:          image: docker.io/calico/node:v3.22.4
 4502:          image: docker.io/calico/kube-controllers:v3.22.4
-root@master-1:~/k8s-v1.23.9/calico-v3.22.3# vi calico.yaml                # 将镜像调整为以下（镜像要提前下载并推送到本地镜像仓库）：              
+root@master-1:~/k8s-v1.23.9/calico-v3.22.4# vi calico.yaml                # 将镜像调整为以下（镜像要提前下载并推送到本地镜像仓库）：              
 4198:          image: hub.speech.local/calico/cni:v3.22.4
 4225:          image: hub.speech.local/calico/cni:v3.22.4
 4266:          image: hub.speech.local/calico/pod2daemon-flexvol:v3.22.4
@@ -668,7 +668,7 @@ root@master-1:~/k8s-v1.23.9/calico-v3.22.3# vi calico.yaml                # 将�
 
 #### 2、创建calico资源：
 ```shell
-root@master-1:~/k8s-v1.23.9/calico-v3.22.3# kubectl apply -f calico.yaml
+root@master-1:~/k8s-v1.23.9/calico-v3.22.4# kubectl apply -f calico.yaml
 root@master-1:~# kubectl apply -f calico.yaml 
 configmap/calico-config created
 customresourcedefinition.apiextensions.k8s.io/bgpconfigurations.crd.projectcalico.org created
