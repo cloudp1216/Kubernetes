@@ -764,7 +764,7 @@ kube-system   coredns-54d7c66b75-jwq8j                   1/1     Running   0    
 
 
 ## 七、部署MetricsServer
-#### 1、部署metrics-server前无法查看集群核心指标：
+#### 1、部署metrics-server前查看集群核心指标：
 ```shell
 root@master-1:~# kubectl top node
 error: Metrics API not available
