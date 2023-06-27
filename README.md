@@ -1261,3 +1261,82 @@ node06     Ready    NVIDIA-A40.4                 12m   v1.23.17   10.20.1.209   
 ```
 
 
+## 十三、调度用户容器测试
+#### 1、创建用户Deployment
+```shell
+root@master01:~# vi test.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      podID: "1"
+  template:
+    metadata:
+      labels:
+        podID: "1"
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: "GPU.Model.NVIDIA-A100-PCIE-40GB"
+                operator: Exists
+      containers:
+      - name: test
+        securityContext:
+          # WARNING: privileged must disable (value: false)
+          privileged: false
+        image: hub.speech.local/pytorch/pytorch:1.12.0-cuda11.3-cudnn8-runtime
+        command:
+        - sleep
+        - infinity
+        resources:
+          limits:
+            nvidia.com/gpu: 2
+```
+```shell
+root@master01:~# kubectl apply -f test.yaml
+deployment.apps/test created
+root@master01:~# kubectl get pods -n default
+NAME                    READY   STATUS    RESTARTS   AGE
+test-779c85cdd4-nrvn2   1/1     Running   0          111s
+```
+```shell
+root@master01:~# kubectl exec -it test-779c85cdd4-nrvn2 -- bash
+root@test-779c85cdd4-nrvn2:/workspace# nvidia-smi -L
+GPU 0: NVIDIA A100-PCIE-40GB (UUID: GPU-f426043c-a8de-8780-88df-ca1d0809225f)
+GPU 1: NVIDIA A100-PCIE-40GB (UUID: GPU-e902a436-a714-54bc-bfdc-d436c4fc0978)
+root@test-779c85cdd4-nrvn2:/workspace# nvidia-smi 
+Tue Jun 27 10:46:47 2023       
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 515.65.01    Driver Version: 515.65.01    CUDA Version: 11.7     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|                               |                      |               MIG M. |
+|===============================+======================+======================|
+|   0  NVIDIA A100-PCI...  On   | 00000000:65:00.0 Off |                    0 |
+| N/A   30C    P0    34W / 250W |      0MiB / 40960MiB |      0%      Default |
+|                               |                      |             Disabled |
++-------------------------------+----------------------+----------------------+
+|   1  NVIDIA A100-PCI...  On   | 00000000:CA:00.0 Off |                    0 |
+| N/A   32C    P0    34W / 250W |      0MiB / 40960MiB |      0%      Default |
+|                               |                      |             Disabled |
++-------------------------------+----------------------+----------------------+
+                                                                               
++-----------------------------------------------------------------------------+
+| Processes:                                                                  |
+|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
+|        ID   ID                                                   Usage      |
+|=============================================================================|
+|  No running processes found                                                 |
++-----------------------------------------------------------------------------+
+```
+
+
