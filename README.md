@@ -585,7 +585,7 @@ KUBE_APISERVER_ARGS=" \
 ```shell
 root@master01:~# systemctl start kube-apiserver && systemctl enable kube-apiserver
 root@master01:~# ssh root@master02 'systemctl start kube-apiserver && systemctl enable kube-apiserver'
-root@master01:~# ssh root@master02 'systemctl start kube-apiserver && systemctl enable kube-apiserver'
+root@master01:~# ssh root@master03 'systemctl start kube-apiserver && systemctl enable kube-apiserver'
 ```
 
 #### 8、启动kube-controller-manager、kube-scheduler：
