@@ -16,9 +16,6 @@
 |7   |10.20.1.207 |node04           |Ubuntu 20.04.6 LTS  |
 |8   |10.20.1.208 |node05           |Ubuntu 20.04.6 LTS  |
 |9   |10.20.1.209 |node06           |Ubuntu 20.04.6 LTS  |
-|10  |10.20.1.210 |node07           |Ubuntu 20.04.6 LTS  |
-|11  |10.20.1.211 |node08           |Ubuntu 20.04.6 LTS  |
-|12  |10.20.1.212 |node09           |Ubuntu 20.04.6 LTS  |
 
 #### 3、软件包及相关信息：
 ```shell
@@ -100,7 +97,7 @@ root@master01# cat > /etc/docker/daemon.json <<EOF       # GPU设备
         "max-size": "100m"
     },
     "storage-driver": "overlay2",
-    "insecure-registries": ["hub.speech.local", "harbor.speech.local"],
+    "insecure-registries": ["hub.speech.local"],
     "default-runtime": "nvidia",
     "runtimes": {
         "nvidia": {
@@ -119,31 +116,31 @@ root@master01# systemctl restart docker
 ## 二、部署ETCD集群
 #### 1、分别在etcd-1、etcd-2、etcd-3节点安装k8s-etcd-3.5.4+bionic_amd64.deb核心组件：
 ```shell
-root@master-1:~# cd k8s-v1.23.9/pkgs/
-root@master-1:~/k8s-v1.23.9/pkgs# dpkg -i k8s-etcd-3.5.4+bionic_amd64.deb
+root@master01:~# cd k8s-v1.23.17/pkgs/
+root@master01:~/k8s-v1.23.17/pkgs# dpkg -i k8s-etcd-3.5.6_amd64.deb 
 Selecting previously unselected package k8s-etcd.
-(Reading database ... 66847 files and directories currently installed.)
-Preparing to unpack k8s-etcd-3.5.4+bionic_amd64.deb ...
-Unpacking k8s-etcd (3.5.4+bionic) ...
-Setting up k8s-etcd (3.5.4+bionic) ...
+(Reading database ... 168167 files and directories currently installed.)
+Preparing to unpack k8s-etcd-3.5.6_amd64.deb ...
+Unpacking k8s-etcd (3.5.6) ...
+Setting up k8s-etcd (3.5.6) ...
 ```
 ```shell
-root@master-1:~/k8s-v1.23.9/pkgs# scp k8s-etcd-3.5.4+bionic_amd64.deb root@10.0.0.182:/root
-root@master-1:~/k8s-v1.23.9/pkgs# scp k8s-etcd-3.5.4+bionic_amd64.deb root@10.0.0.183:/root
-root@master-1:~/k8s-v1.23.9/pkgs# ssh root@10.0.0.182 'cd /root && dpkg -i k8s-etcd-3.5.4+bionic_amd64.deb'
-root@master-1:~/k8s-v1.23.9/pkgs# ssh root@10.0.0.183 'cd /root && dpkg -i k8s-etcd-3.5.4+bionic_amd64.deb'
+root@master01:~/k8s-v1.23.17/pkgs# scp k8s-etcd-3.5.6_amd64.deb root@master02:/root
+root@master01:~/k8s-v1.23.17/pkgs# scp k8s-etcd-3.5.6_amd64.deb root@master03:/root
+root@master01:~/k8s-v1.23.17/pkgs# ssh root@master02 'cd /root && dpkg -i k8s-etcd-3.5.6_amd64.deb'
+root@master01:~/k8s-v1.23.17/pkgs# ssh root@master03 'cd /root && dpkg -i k8s-etcd-3.5.6_amd64.deb'
 ```
 
 #### 2、在etcd-1节点初始化etcd证书（注意以双下滑线开头结尾的配置项需要调整）：
 ```shell
-root@master-1:~# cd /k8s/etcd/ssl/cfssl-tools
-root@master-1:/k8s/etcd/ssl/cfssl-tools# vi etcd-csr.json
+root@master01:~# cd /k8s/etcd/ssl/cfssl-tools
+root@master01:/k8s/etcd/ssl/cfssl-tools# vi etcd-csr.json
 {
     "CN": "etcd",
     "hosts": [
-        "10.0.0.181",
-        "10.0.0.182",
-        "10.0.0.183",
+        "10.20.1.201",
+        "10.20.1.202",
+        "10.20.1.203",
         "127.0.0.1",
         "localhost"
     ],
@@ -161,13 +158,13 @@ root@master-1:/k8s/etcd/ssl/cfssl-tools# vi etcd-csr.json
         }
     ]
 }
-root@master-1:/k8s/etcd/ssl/cfssl-tools# vi peer-csr.json
+root@master01:/k8s/etcd/ssl/cfssl-tools# vi peer-csr.json
 {
     "CN": "peer",
     "hosts": [
-        "10.0.0.181",
-        "10.0.0.182",
-        "10.0.0.183",
+    "10.20.1.201",
+    "10.20.1.202",
+    "10.20.1.203",
         "127.0.0.1",
         "localhost"
     ],
@@ -185,47 +182,47 @@ root@master-1:/k8s/etcd/ssl/cfssl-tools# vi peer-csr.json
         }
     ]
 }
-root@master-1:/k8s/etcd/ssl/cfssl-tools# ./init-certs.sh  # 初始化证书
+root@master01:/k8s/etcd/ssl/cfssl-tools# ./init-certs.sh  # 初始化证书
 Init Etcd Certs OK.
-root@master-1:/k8s/etcd/ssl/cfssl-tools# ls -lh ../
+root@master01:/k8s/etcd/ssl/cfssl-tools# ls -lh ../
 total 40K
--rw-r--r-- 1 root root 1.1K Jul 20 14:11 ca.csr
--rw------- 1 root root 1.7K Jul 20 14:11 ca-key.pem
--rw-r--r-- 1 root root 1.3K Jul 20 14:11 ca.pem
-drwxr-xr-x 2 root root 4.0K Jul 20 14:11 cfssl-tools
--rw-r--r-- 1 root root 1.1K Jul 20 14:11 etcd.csr
--rw------- 1 root root 1.7K Jul 20 14:11 etcd-key.pem
--rw-r--r-- 1 root root 1.4K Jul 20 14:11 etcd.pem
--rw-r--r-- 1 root root 1.1K Jul 20 14:11 peer.csr
--rw------- 1 root root 1.7K Jul 20 14:11 peer-key.pem
--rw-r--r-- 1 root root 1.5K Jul 20 14:11 peer.pem
+-rw-r--r-- 1 root root 1.1K Apr  2 15:55 ca.csr
+-rw------- 1 root root 1.7K Apr  2 15:55 ca-key.pem
+-rw-r--r-- 1 root root 1.3K Apr  2 15:55 ca.pem
+drwxr-xr-x 2 root root 4.0K Jun 27 10:52 cfssl-tools
+-rw-r--r-- 1 root root 1.1K Apr  2 15:55 etcd.csr
+-rw------- 1 root root 1.7K Apr  2 15:55 etcd-key.pem
+-rw-r--r-- 1 root root 1.4K Apr  2 15:55 etcd.pem
+-rw-r--r-- 1 root root 1.1K Apr  2 15:55 peer.csr
+-rw------- 1 root root 1.7K Apr  2 15:55 peer-key.pem
+-rw-r--r-- 1 root root 1.5K Apr  2 15:55 peer.pem
 ```
 
 #### 3、分发etcd证书到etcd-2、etcd-3节点：
 ```shell
 root@master-1:~# cd /k8s/etcd
-root@master-1:/k8s/etcd# scp -r ssl root@10.0.0.182:/k8s/etcd
-root@master-1:/k8s/etcd# scp -r ssl root@10.0.0.183:/k8s/etcd
+root@master-1:/k8s/etcd# scp -r ssl root@master02:/k8s/etcd
+root@master-1:/k8s/etcd# scp -r ssl root@master03:/k8s/etcd
 ```
 
 #### 4、分别调整etcd-1、etcd-2、etcd-3节点etcd配置文件：
 etcd-1：
 ```shell
-root@master-1:~# cd /k8s/etcd/cfg
-root@master-1:/k8s/etcd/cfg# ln -svf etcd.cluster etcd    # 注意etcd默认配置为单实例，这里调整配置为集群
+root@master01:~# cd /k8s/etcd/cfg
+root@master01:/k8s/etcd/cfg# ln -svf etcd.cluster etcd    # 注意etcd默认配置为单实例，这里调整配置为集群
 'etcd' -> 'etcd.cluster'
-root@master-1:/k8s/etcd/cfg# vi etcd                      # 注意所有双下滑杠开头结尾的配置项都需要调整，ETCD_ARGS和ETCD_DATA_DIR变量值建议调整与节点一致
+root@master01:/k8s/etcd/cfg# vi etcd                      # 注意所有双下滑杠开头结尾的配置项都需要调整，ETCD_ARGS和ETCD_DATA_DIR变量值建议调整与节点一致
 #[Member]
 ETCD_ARGS="--name=etcd-1"
 ETCD_DATA_DIR="/k8s/etcd/etcd-1.data"
-ETCD_LISTEN_CLIENT_URLS="https://10.0.0.181:2379,https://127.0.0.1:2379"
-ETCD_ADVERTISE_CLIENT_URLS="https://10.0.0.181:2379"
+ETCD_LISTEN_CLIENT_URLS="https://10.20.1.201:2379,https://127.0.0.1:2379"
+ETCD_ADVERTISE_CLIENT_URLS="https://10.20.1.201:2379"
 
 
 #[Clustering]
-ETCD_LISTEN_PEER_URLS="https://10.0.0.181:2380"
-ETCD_INITIAL_ADVERTISE_PEER_URLS="https://10.0.0.181:2380"
-ETCD_INITIAL_CLUSTER="etcd-1=https://10.0.0.181:2380,etcd-2=https://10.0.0.182:2380,etcd-3=https://10.0.0.183:2380"
+ETCD_LISTEN_PEER_URLS="https://10.20.1.201:2380"
+ETCD_INITIAL_ADVERTISE_PEER_URLS="https://10.20.1.201:2380"
+ETCD_INITIAL_CLUSTER="etcd-1=https://10.20.1.201:2380,etcd-2=https://10.20.1.202:2380,etcd-3=https://10.20.1.203:2380"
 ETCD_INITIAL_CLUSTER_STATE="new"
 ETCD_INITIAL_CLUSTER_TOKEN="etcd-cluster"
 
@@ -244,21 +241,21 @@ ETCD_PEER_KEY_FILE="/k8s/etcd/ssl/peer-key.pem"
 ```
 etcd-2：
 ```shell
-root@master-2:~# cd /k8s/etcd/cfg
-root@master-2:/k8s/etcd/cfg# ln -svf etcd.cluster etcd
+root@master02:~# cd /k8s/etcd/cfg
+root@master02:/k8s/etcd/cfg# ln -svf etcd.cluster etcd
 'etcd' -> 'etcd.cluster'
-root@master-2:/k8s/etcd/cfg# vi etcd
+root@master02:/k8s/etcd/cfg# vi etcd 
 #[Member]
 ETCD_ARGS="--name=etcd-2"
 ETCD_DATA_DIR="/k8s/etcd/etcd-2.data"
-ETCD_LISTEN_CLIENT_URLS="https://10.0.0.182:2379,https://127.0.0.1:2379"
-ETCD_ADVERTISE_CLIENT_URLS="https://10.0.0.182:2379"
+ETCD_LISTEN_CLIENT_URLS="https://10.20.1.202:2379,https://127.0.0.1:2379"
+ETCD_ADVERTISE_CLIENT_URLS="https://10.20.1.202:2379"
 
 
 #[Clustering]
-ETCD_LISTEN_PEER_URLS="https://10.0.0.182:2380"
-ETCD_INITIAL_ADVERTISE_PEER_URLS="https://10.0.0.182:2380"
-ETCD_INITIAL_CLUSTER="etcd-1=https://10.0.0.181:2380,etcd-2=https://10.0.0.182:2380,etcd-3=https://10.0.0.183:2380"
+ETCD_LISTEN_PEER_URLS="https://10.20.1.202:2380"
+ETCD_INITIAL_ADVERTISE_PEER_URLS="https://10.20.1.202:2380"
+ETCD_INITIAL_CLUSTER="etcd-1=https://10.20.1.201:2380,etcd-2=https://10.20.1.202:2380,etcd-3=https://10.20.1.203:2380"
 ETCD_INITIAL_CLUSTER_STATE="new"
 ETCD_INITIAL_CLUSTER_TOKEN="etcd-cluster"
 
@@ -277,21 +274,21 @@ ETCD_PEER_KEY_FILE="/k8s/etcd/ssl/peer-key.pem"
 ```
 etcd-3：
 ```shell
-root@master-3:~# cd /k8s/etcd/cfg
-root@master-3:/k8s/etcd/cfg# ln -svf etcd.cluster etcd
+root@master03:~# cd /k8s/etcd/cfg
+root@master03:/k8s/etcd/cfg# ln -svf etcd.cluster etcd
 'etcd' -> 'etcd.cluster'
-root@master-3:/k8s/etcd/cfg# vi etcd
+root@master03:/k8s/etcd/cfg# vi etcd 
 #[Member]
 ETCD_ARGS="--name=etcd-3"
 ETCD_DATA_DIR="/k8s/etcd/etcd-3.data"
-ETCD_LISTEN_CLIENT_URLS="https://10.0.0.183:2379,https://127.0.0.1:2379"
-ETCD_ADVERTISE_CLIENT_URLS="https://10.0.0.183:2379"
+ETCD_LISTEN_CLIENT_URLS="https://10.20.1.203:2379,https://127.0.0.1:2379"
+ETCD_ADVERTISE_CLIENT_URLS="https://10.20.1.203:2379"
 
 
 #[Clustering]
-ETCD_LISTEN_PEER_URLS="https://10.0.0.183:2380"
-ETCD_INITIAL_ADVERTISE_PEER_URLS="https://10.0.0.183:2380"
-ETCD_INITIAL_CLUSTER="etcd-1=https://10.0.0.181:2380,etcd-2=https://10.0.0.182:2380,etcd-3=https://10.0.0.183:2380"
+ETCD_LISTEN_PEER_URLS="https://10.20.1.203:2380"
+ETCD_INITIAL_ADVERTISE_PEER_URLS="https://10.20.1.203:2380"
+ETCD_INITIAL_CLUSTER="etcd-1=https://10.20.1.201:2380,etcd-2=https://10.20.1.202:2380,etcd-3=https://10.20.1.203:2380"
 ETCD_INITIAL_CLUSTER_STATE="new"
 ETCD_INITIAL_CLUSTER_TOKEN="etcd-cluster"
 
@@ -311,17 +308,22 @@ ETCD_PEER_KEY_FILE="/k8s/etcd/ssl/peer-key.pem"
 
 #### 5、分别启动etcd-1、etcd-2、etcd-3节点的etcd服务：
 ```shell
-root@master-1:~# systemctl start etcd && systemctl enable etcd
-root@master-1:~# ssh root@10.0.0.182 'systemctl start etcd && systemctl enable etcd'
-root@master-1:~# ssh root@10.0.0.183 'systemctl start etcd && systemctl enable etcd'
+root@master01:~# systemctl start etcd && systemctl enable etcd
+root@master01:~# ssh root@master02 'systemctl start etcd && systemctl enable etcd'
+root@master01:~# ssh root@master03 'systemctl start etcd && systemctl enable etcd'
 ```
 ```shell
-root@master-1:~# ps -ef | grep -v grep | grep etcd
-root      6371     1  2 14:50 ?        00:00:12 /k8s/etcd/bin/etcd --name=etcd-1
-root@master-1:~# ssh root@10.0.0.182 'ps -ef | grep -v grep | grep etcd'
-root      6115     1  2 14:50 ?        00:00:11 /k8s/etcd/bin/etcd --name=etcd-2
-root@master-1:~# ssh root@10.0.0.183 'ps -ef | grep -v grep | grep etcd'
-root      5824     1  2 14:50 ?        00:00:11 /k8s/etcd/bin/etcd --name=etcd-3
+root@master01:~# systemctl status etcd
+● etcd.service - Etcd Server
+   Loaded: loaded (/lib/systemd/system/etcd.service; enabled; vendor preset: enabled)
+   Active: active (running) since Sun 2023-04-02 17:34:26 CST; 2 months 24 days ago
+ Main PID: 1553 (etcd)
+    Tasks: 39 (limit: 4915)
+   CGroup: /system.slice/etcd.service
+           └─1553 /k8s/etcd/bin/etcd --name=etcd-1
+
+root@master01:~# ssh root@master02 'systemctl status etcd'
+root@master01:~# ssh root@master03 'systemctl status etcd'
 ```
 
 
