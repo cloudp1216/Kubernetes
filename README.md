@@ -7,33 +7,42 @@
 #### 2、环境规划：
 |ID  |服务器IP    |主机名           |系统版本            |
 |:-: |:-:         |:-:              |:-:                 |
-|1   |10.0.0.181  |master-1,etcd-1  |Ubuntu 18.04.6 LTS  |
-|2   |10.0.0.182  |master-2,etcd-2  |Ubuntu 18.04.6 LTS  |
-|3   |10.0.0.183  |master-3,etcd-3  |Ubuntu 18.04.6 LTS  |
-|4   |10.0.0.184  |node-1           |Ubuntu 18.04.6 LTS  |
-|5   |10.0.0.185  |node-2           |Ubuntu 18.04.6 LTS  | 
-|6   |10.0.0.186  |node-3           |Ubuntu 18.04.6 LTS  |
+|1   |10.20.1.201 |master01,etcd-1  |Ubuntu 18.04.6 LTS  |
+|2   |10.20.1.202 |master02,etcd-2  |Ubuntu 18.04.6 LTS  |
+|3   |10.20.1.203 |master03,etcd-3  |Ubuntu 18.04.6 LTS  |
+|4   |10.20.1.204 |node01           |Ubuntu 20.04.6 LTS  |
+|5   |10.20.1.205 |node02           |Ubuntu 20.04.6 LTS  | 
+|6   |10.20.1.206 |node03           |Ubuntu 20.04.6 LTS  |
+|7   |10.20.1.207 |node04           |Ubuntu 20.04.6 LTS  |
+|8   |10.20.1.208 |node05           |Ubuntu 20.04.6 LTS  |
+|9   |10.20.1.209 |node06           |Ubuntu 20.04.6 LTS  |
+|10  |10.20.1.210 |node07           |Ubuntu 20.04.6 LTS  |
+|11  |10.20.1.211 |node08           |Ubuntu 20.04.6 LTS  |
+|12  |10.20.1.212 |node09           |Ubuntu 20.04.6 LTS  |
 
 #### 3、软件包及相关信息：
 ```shell
-软件包：                                                        描述：
-k8s-v1.23.9/pkgs/k8s-etcd-3.5.4+bionic_amd64.deb                持久状态存储etcd
-k8s-v1.23.9/pkgs/k8s-kubernetes-master-1.23.9+bionic_amd64.deb  master核心组件（kube-apiserver、kube-controller-manager、kube-scheduler）
-k8s-v1.23.9/pkgs/k8s-kubernetes-node-1.23.9+bionic_amd64.deb    node核心组件（kubelet、kube-proxy）
-k8s-v1.23.9/pkgs/k8s-slb-1.16.1+bionic_amd64.deb                服务负载均衡（nginx四层代理），部署在各node之上，代理kubelet、kube-proxy访问kube-apiserver
-k8s-v1.23.9/calico-v3.22.4                                      网络插件calico
-k8s-v1.23.9/coredns-v1.8.6                                      服务发现coredns
-k8s-v1.23.9/dashboard-v2.5.1                                    集群可视化dashboard
-k8s-v1.23.9/docker-ce-v20.10.12                                 容器服务docker（deb包从阿里云镜像站下载）
-k8s-v1.23.9/metrics-server-v0.6.1                               核心指标监控metrics-server
+软件包：                                                         描述：
+k8s-v1.23.17/pkgs/k8s-etcd-3.5.6_amd64.deb                       持久状态存储etcd
+k8s-v1.23.17/pkgs/k8s-kubernetes-master-1.23.17_amd64.deb        master核心组件（kube-apiserver、kube-controller-manager、kube-scheduler）
+k8s-v1.23.17/pkgs/k8s-kubernetes-node-1.23.17_amd64.deb          node核心组件（kubelet、kube-proxy）
+k8s-v1.23.17/pkgs/k8s-slb-1.16.1_amd64.deb                       服务负载均衡（nginx四层代理），部署在各node之上，代理kubelet、kube-proxy访问kube-apiserver
+k8s-v1.23.17/calico-v3.22.5                                      网络插件calico
+k8s-v1.23.17/coredns-v1.8.6                                      服务发现coredns
+k8s-v1.23.17/ingress-controllers/traefik-v2.9.6                  七层代理ingress controller
+k8s-v1.23.17/dashboard-v2.5.1                                    集群可视化dashboard
+k8s-v1.23.17/metrics-server-v0.6.1                               核心指标监控metrics-server
+k8s-v1.23.17/docker-ce-v20.10.12                                 容器服务docker（deb包从阿里云镜像站下载）
+k8s-v1.23.17/nvidia-docker2-v2.12.0                              GPU相关，能够在容器内部调用GPU资源
+k8s-v1.23.17/k8s-device-plugin-v0.13.0                           GPU相关，能够在K8s集群调用GPU资源
+k8s-v1.23.17/k8s-etcd-v3.5.6                                     通过dpkg -b命令将该目录打包为k8s-etcd-3.5.6_amd64.deb安装包，方便部署
+k8s-v1.23.17/k8s-kubernetes-master                               通过dpkg -b命令将该目录打包为k8s-kubernetes-master-1.23.17_amd64.deb安装包，方便部署
+k8s-v1.23.17/k8s-kubernetes-node                                 通过dpkg -b命令将该目录打包为k8s-kubernetes-node-1.23.17_amd64.deb安装包，方便部署
+k8s-v1.23.17/k8s-slb-v1.16.1                                     通过dpkg -b命令将该目录打包为k8s-slb-1.16.1_amd64.deb安装包，方便部署
 
 注意：
-k8s-etcd、k8s-kubernetes-master、k8s-kubernetes-node包中二进制程序由官方下载，此处仅做了二次封装，k8s-slb由nginx-1.16.1.tar.gz源码编译，未更改过任何源代码：
-https://dl.k8s.io/v1.23.9/kubernetes-server-linux-amd64.tar.gz
-https://dl.k8s.io/v1.23.9/kubernetes-client-linux-amd64.tar.gz
-https://dl.k8s.io/v1.23.9/kubernetes-node-linux-amd64.tar.gz
-https://nginx.org/download/nginx-1.16.1.tar.gz
-https://github.com/etcd-io/etcd/releases/download/v3.5.4/etcd-v3.5.4-linux-amd64.tar.gz
+k8s-etcd、k8s-kubernetes-master、k8s-kubernetes-node包中二进制程序由官方下载（链接如下），此处仅做了二次封装，k8s-slb由nginx-1.16.1.tar.gz源码编译，未更改过任何源代码
+https://dl.k8s.io/v1.23.17/kubernetes-server-linux-amd64.tar.gz
 ```
 
 #### 4、集群默认配置：
@@ -45,36 +54,32 @@ https://github.com/etcd-io/etcd/releases/download/v3.5.4/etcd-v3.5.4-linux-amd64
 - Kubernetes和etcd证书默认签发时长：50年
 - Kubelet证书默认签发时长：10年
 
-#### 5、软件包下载地址：
-链接：https://pan.baidu.com/s/1bO0WqBn_EKbxg49B_Obm0w </p>
-提取码：m05d
-
-#### 6、基础环境配置（略）：
+#### 5、基础环境配置（略）：
 - 关闭swap
 - 配置时间同步
 - 配置时区为Asia/Shanghai
 - 配置主机名
 - 配置master-1到master-2、master-3免密登录
-- 关闭unattended-upgrades自动更新服务
+- 关闭并卸载unattended-upgrades自动更新服务
 - 提前安装ipvsadm、ipset
 - 提前安装私有镜像仓库Harbor（当前Harbor域名解析为：hub.speech.local）
-- 添加各节点DNS解析或调整本地hosts文件：
-```shell
-root@master-1:~# cat >> /etc/hosts <<EOF
-10.0.0.181      master-1 etcd-1
-10.0.0.182      master-2 etcd-2
-10.0.0.183      master-3 etcd-3
-10.0.0.184      node-1
-10.0.0.185      node-2
-10.0.0.186      node-3
-EOF
-```
+- 添加各节点DNS解析（内部域为：k8s.speech.local）或调整本地hosts文件
+- GPU设备需要安装相关驱动及cuda
 - 安装配置Docker（各个节点都需要）：
 ```shell
-root@master-1:~# tar zxf k8s-v1.23.9.tar.gz
-root@master-1:~# cd k8s-v1.23.9/docker-ce-v20.10.12/
-root@master-1:~/k8s-v1.23.9/docker-ce-v20.10.12# dpkg -i *.deb
-root@master-1:~/k8s-v1.23.9/docker-ce-v20.10.12# cat > /etc/docker/daemon.json <<EOF
+root@master01:~# cd k8s-v1.23.17/docker-ce-v20.10.12/
+root@master01:~/k8s-v1.23.9/docker-ce-v20.10.12# dpkg -i containerd.io-1.6.8_amd64.deb
+root@master01:~/k8s-v1.23.9/docker-ce-v20.10.12# cd ubuntu18.04        # 或cd ubuntu20.04
+root@master01:~/k8s-v1.23.9/docker-ce-v20.10.12# dpkg -i *
+```
+- GPU设备需要安装nvidia-docker2
+```shell
+root@master01:~/k8s-v1.23.17# cd nvidia-docker2-v2.12.0
+root@master01:~/k8s-v1.23.17/nvidia-docker2-v2.12.0# dpkg -i *
+```
+- 调整docker配置文件
+```shell
+root@master01# cat > /etc/docker/daemon.json <<EOF       # 非GPU设备
 {
     "exec-opts": ["native.cgroupdriver=systemd"],
     "log-driver": "json-file",
@@ -85,7 +90,29 @@ root@master-1:~/k8s-v1.23.9/docker-ce-v20.10.12# cat > /etc/docker/daemon.json <
     "insecure-registries": ["hub.speech.local"]
 }
 EOF
-root@master-1:~/k8s-v1.23.9/docker-ce-v20.10.12# systemctl restart docker
+```
+```shell
+root@master01# cat > /etc/docker/daemon.json <<EOF       # GPU设备
+{
+    "exec-opts": ["native.cgroupdriver=systemd"],
+    "log-driver": "json-file",
+    "log-opts": {
+        "max-size": "100m"
+    },
+    "storage-driver": "overlay2",
+    "insecure-registries": ["hub.speech.local", "harbor.speech.local"],
+    "default-runtime": "nvidia",
+    "runtimes": {
+        "nvidia": {
+            "path": "nvidia-container-runtime",
+            "runtimeArgs": []
+        }
+    }
+}
+EOF
+```
+```shell
+root@master01# systemctl restart docker
 ```
 
 
