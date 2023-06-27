@@ -627,9 +627,9 @@ clusterrolebinding.rbac.authorization.k8s.io/kubelet-bootstrap created
 
 
 ## 四、添加Master节点到集群
-#### 1、调整kubelet配置文件（master-2、master-3也需要调整）：
+#### 1、调整kubelet配置文件（master02、master03也需要调整）：
 ```shell
-root@master-1:~# vi /k8s/kubernetes/cfg/kubelet
+root@master01:~# vi /k8s/kubernetes/cfg/kubelet
 KUBELET_ARGS=" \
     --bootstrap-kubeconfig=/k8s/kubernetes/cfg/bootstrap.kubeconfig \
     --kubeconfig=/k8s/kubernetes/cfg/kubelet.kubeconfig \
@@ -643,64 +643,69 @@ KUBELET_ARGS=" \
     --cert-dir=/k8s/kubernetes/ssl \
     --hairpin-mode=promiscuous-bridge \
     --serialize-image-pulls=false \
-    --pod-infra-container-image=hub.speech.local/k8s.gcr.io/pause:3.6 \   # 调整此项，pause镜像要提前推送到本地镜像仓库
-    --logtostderr=true \
+    --pod-infra-container-image=hub.speech.local/registry.k8s.io/pause:3.6 \  # 调整此项，pause镜像要提前推送到本地镜像仓库
     --v=2"
 ```
 
 #### 2、启动kubelet、kube-proxy：
 ```shell
-root@master-1:~# systemctl start kubelet kube-proxy && systemctl enable kubelet kube-proxy
-root@master-1:~# ssh root@10.0.0.182 'systemctl start kubelet kube-proxy && systemctl enable kubelet kube-proxy'
-root@master-1:~# ssh root@10.0.0.183 'systemctl start kubelet kube-proxy && systemctl enable kubelet kube-proxy'
+root@master01:~# systemctl start kubelet kube-proxy && systemctl enable kubelet kube-proxy
+root@master01:~# ssh root@master02 'systemctl start kubelet kube-proxy && systemctl enable kubelet kube-proxy'
+root@master01:~# ssh root@master03 'systemctl start kubelet kube-proxy && systemctl enable kubelet kube-proxy'
 ```
 
 #### 3、允许master节点加入集群：
 ```shell
-root@master-1:~# kubectl get csr
+root@master01:~# kubectl get csr
 NAME                                                   AGE   SIGNERNAME                                    REQUESTOR           REQUESTEDDURATION   CONDITION
 node-csr-PNk547vpMHuA-q0rhNCUdrV4KFUh2n5BVPoHPigRGW4   30s   kubernetes.io/kube-apiserver-client-kubelet   kubelet-bootstrap   <none>              Pending
 node-csr-aDTDGOPPvkExkqtwjwTwMCMW_sJIYAoJZPGlupysvmg   93s   kubernetes.io/kube-apiserver-client-kubelet   kubelet-bootstrap   <none>              Pending
 node-csr-t5ZhqKD6bjot4WSbvbmyYrD520Ba4CpX2gGO-Me9KFo   26s   kubernetes.io/kube-apiserver-client-kubelet   kubelet-bootstrap   <none>              Pending
-root@master-1:~# kubectl certificate approve node-csr-PNk547vpMHuA-q0rhNCUdrV4KFUh2n5BVPoHPigRGW4
+root@master01:~# kubectl certificate approve node-csr-PNk547vpMHuA-q0rhNCUdrV4KFUh2n5BVPoHPigRGW4
 certificatesigningrequest.certificates.k8s.io/node-csr-PNk547vpMHuA-q0rhNCUdrV4KFUh2n5BVPoHPigRGW4 approved
-root@master-1:~# kubectl certificate approve node-csr-aDTDGOPPvkExkqtwjwTwMCMW_sJIYAoJZPGlupysvmg
+root@master01:~# kubectl certificate approve node-csr-aDTDGOPPvkExkqtwjwTwMCMW_sJIYAoJZPGlupysvmg
 certificatesigningrequest.certificates.k8s.io/node-csr-aDTDGOPPvkExkqtwjwTwMCMW_sJIYAoJZPGlupysvmg approved
-root@master-1:~# kubectl certificate approve node-csr-t5ZhqKD6bjot4WSbvbmyYrD520Ba4CpX2gGO-Me9KFo
+root@master01:~# kubectl certificate approve node-csr-t5ZhqKD6bjot4WSbvbmyYrD520Ba4CpX2gGO-Me9KFo
 certificatesigningrequest.certificates.k8s.io/node-csr-t5ZhqKD6bjot4WSbvbmyYrD520Ba4CpX2gGO-Me9KFo approved
 ```
 
 #### 4、查看节点状态（NotReady是因为未部署网络插件）：
 ```shell
-root@master-1:~# kubectl get node -o wide
-NAME       STATUS     ROLES    AGE   VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION       CONTAINER-RUNTIME
-master-1   NotReady   <none>   81s   v1.23.9   10.0.0.181    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
-master-2   NotReady   <none>   93s   v1.23.9   10.0.0.182    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
-master-3   NotReady   <none>   69s   v1.23.9   10.0.0.183    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
+root@master01:~# kubectl get node -o wide
+NAME       STATUS     ROLES    AGE   VERSION    INTERNAL-IP   EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION       CONTAINER-RUNTIME
+master01   NotReady   <none>   81s   v1.23.17   10.20.1.201   <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
+master02   NotReady   <none>   93s   v1.23.17   10.20.1.202   <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
+master03   NotReady   <none>   69s   v1.23.17   10.20.1.203   <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
 ```
 
 
 ## 五、部署Calico网络插件
 #### 1、调整calico镜像为本地仓库：
 ```shell
-root@master-1:~# cd k8s-v1.23.9/calico-v3.22.4
-root@master-1:~# cat calico.yaml | grep image -n
-4198:          image: docker.io/calico/cni:v3.22.4
-4225:          image: docker.io/calico/cni:v3.22.4
-4266:          image: docker.io/calico/pod2daemon-flexvol:v3.22.4
-4277:          image: docker.io/calico/node:v3.22.4
-4502:          image: docker.io/calico/kube-controllers:v3.22.4
-root@master-1:~/k8s-v1.23.9/calico-v3.22.4# vi calico.yaml                # 将镜像调整为以下（镜像要提前下载并推送到本地镜像仓库）：              
-4198:          image: hub.speech.local/calico/cni:v3.22.4
-4225:          image: hub.speech.local/calico/cni:v3.22.4
-4266:          image: hub.speech.local/calico/pod2daemon-flexvol:v3.22.4
-4277:          image: hub.speech.local/calico/node:v3.22.4
-4502:          image: hub.speech.local/calico/kube-controllers:v3.22.4
+root@master01:~# cd k8s-v1.23.17/calico-v3.22.5
+root@master01:~/k8s-v1.23.17/calico-v3.22.5# cat calico.yaml | grep image: -n
+4217:      - image: docker.io/calico/typha:v3.22.5
+4333:          image: docker.io/calico/cni:v3.22.5
+4360:          image: docker.io/calico/cni:v3.22.5
+4401:          image: docker.io/calico/pod2daemon-flexvol:v3.22.5
+4411:          image: docker.io/calico/node:v3.22.5
+4436:          image: docker.io/calico/node:v3.22.5
+4675:          image: docker.io/calico/kube-controllers:v3.22.5
+```
+```shell
+root@master01:~/k8s-v1.23.17/calico-v3.22.5# vi calico.yaml                 # 将镜像调整为以下（镜像要提前下载并推送到本地镜像仓库）：              
+4217:      - image: hub.speech.local/calico/typha:v3.22.5
+4333:          image: hub.speech.local/calico/cni:v3.22.5
+4360:          image: hub.speech.local/calico/cni:v3.22.5
+4401:          image: hub.speech.local/calico/pod2daemon-flexvol:v3.22.5
+4411:          image: hub.speech.local/calico/node:v3.22.5
+4436:          image: hub.speech.local/calico/node:v3.22.5
+4675:          image: hub.speech.local/calico/kube-controllers:v3.22.5
 ```
 
 #### 2、创建calico资源：
 ```shell
-root@master-1:~/k8s-v1.23.9/calico-v3.22.4# kubectl apply -f calico.yaml
+root@master01:~/k8s-v1.23.17/calico-v3.22.5# kubectl apply -f calico.yaml
 configmap/calico-config created
 customresourcedefinition.apiextensions.k8s.io/bgpconfigurations.crd.projectcalico.org created
 customresourcedefinition.apiextensions.k8s.io/bgppeers.crd.projectcalico.org created
@@ -723,6 +728,9 @@ clusterrole.rbac.authorization.k8s.io/calico-kube-controllers created
 clusterrolebinding.rbac.authorization.k8s.io/calico-kube-controllers created
 clusterrole.rbac.authorization.k8s.io/calico-node created
 clusterrolebinding.rbac.authorization.k8s.io/calico-node created
+service/calico-typha created
+deployment.apps/calico-typha created
+poddisruptionbudget.policy/calico-typha created
 daemonset.apps/calico-node created
 serviceaccount/calico-node created
 deployment.apps/calico-kube-controllers created
@@ -732,40 +740,42 @@ poddisruptionbudget.policy/calico-kube-controllers created
 
 #### 3、查看pod状态：
 ```shell
-root@master-1:~# kubectl get pods -A -o wide
-NAMESPACE     NAME                                       READY   STATUS    RESTARTS   AGE    IP           NODE       NOMINATED NODE   READINESS GATES
-kube-system   calico-kube-controllers-867987dd7c-9zr9f   1/1     Running   0          2m6s   10.244.0.2   master-2   <none>           <none>
-kube-system   calico-node-4qnm5                          1/1     Running   0          2m6s   10.0.0.182   master-2   <none>           <none>
-kube-system   calico-node-9vbc8                          1/1     Running   0          2m6s   10.0.0.183   master-3   <none>           <none>
-kube-system   calico-node-d92c8                          1/1     Running   0          2m6s   10.0.0.181   master-1   <none>           <none>
+root@master01:~# kubectl get pods -A -o wide
+NAMESPACE     NAME                                       READY   STATUS    RESTARTS   AGE    IP             NODE       NOMINATED NODE   READINESS GATES
+kube-system   calico-kube-controllers-867987dd7c-9zr9f   1/1     Running   0          2m6s   10.244.0.2     master02   <none>           <none>
+kube-system   calico-node-4qnm5                          1/1     Running   0          2m6s   10.20.1.202    master02   <none>           <none>
+kube-system   calico-node-9vbc8                          1/1     Running   0          2m6s   10.20.1.203    master03   <none>           <none>
+kube-system   calico-node-d92c8                          1/1     Running   0          2m6s   10.20.1.201    master01   <none>           <none>
 ```
 
 #### 4、再次查看node状态：
 ```shell
-root@master-1:~# kubectl get node -o wide
-NAME       STATUS   ROLES    AGE   VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION       CONTAINER-RUNTIME
-master-1   Ready    <none>   22m   v1.23.9   10.0.0.181    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
-master-2   Ready    <none>   22m   v1.23.9   10.0.0.182    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
-master-3   Ready    <none>   22m   v1.23.9   10.0.0.183    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
+root@master01:~# kubectl get node -o wide
+NAME       STATUS   ROLES    AGE   VERSION    INTERNAL-IP   EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION       CONTAINER-RUNTIME
+master01   Ready    <none>   22m   v1.23.17   10.20.1.201   <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
+master02   Ready    <none>   22m   v1.23.17   10.20.1.202   <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
+master03   Ready    <none>   22m   v1.23.17   10.20.1.203   <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
 ```
 
 
 ## 六、部署CoreDNS
 #### 1、调整coredns镜像为本地仓库：
 ```shell
-root@master-1:~# cd k8s-v1.23.9/coredns-v1.8.6
-root@master-1:~/k8s-v1.23.9/coredns-v1.8.6# cat coredns.yaml | grep image: -n
+root@master01:~# cd k8s-v1.23.17/coredns-v1.8.6
+root@master01:~/k8s-v1.23.17/coredns-v1.8.6# cat coredns.yaml | grep image: -n
 143:        image: registry.cn-hangzhou.aliyuncs.com/google_containers/coredns:v1.8.6
-root@master-1:~/k8s-v1.23.9/coredns-v1.8.6# vi coredns.yaml +143       # 将镜像调整为以下（镜像要提前下载并推送到本地镜像仓库）：
-143:        image: hub.speech.local/k8s.gcr.io/coredns:v1.8.6
+```
+```shell
+root@master01:~/k8s-v1.23.17/coredns-v1.8.6# vi coredns.yaml +143       # 将镜像调整为以下（镜像要提前下载并推送到本地镜像仓库）：
+143:        image: hub.speech.local/registry.k8s.io/coredns:v1.8.6
 ```
 
 #### 2、调整coredns配置：
 ```shell
-root@master-1:~/k8s-v1.23.9/coredns-v1.8.6# CLUSTER_DNS_DOMAIN="cluster.local"
-root@master-1:~/k8s-v1.23.9/coredns-v1.8.6# CLUSTER_DNS_SERVER="10.254.0.2"
-root@master-1:~/k8s-v1.23.9/coredns-v1.8.6# CLUSTER_DNS_MEMORY_LIMIT="200Mi"
-root@master-1:~/k8s-v1.23.9/coredns-v1.8.6# sed -i -e "s@__DNS__DOMAIN__@${CLUSTER_DNS_DOMAIN}@" \
+root@master01:~/k8s-v1.23.17/coredns-v1.8.6# CLUSTER_DNS_DOMAIN="cluster.local"
+root@master01:~/k8s-v1.23.17/coredns-v1.8.6# CLUSTER_DNS_SERVER="10.254.0.2"
+root@master01:~/k8s-v1.23.17/coredns-v1.8.6# CLUSTER_DNS_MEMORY_LIMIT="200Mi"
+root@master01:~/k8s-v1.23.17/coredns-v1.8.6# sed -i -e "s@__DNS__DOMAIN__@${CLUSTER_DNS_DOMAIN}@" \
 >        -e "s@__DNS__SERVER__@${CLUSTER_DNS_SERVER}@" \
 >        -e "s@__DNS__MEMORY__LIMIT__@${CLUSTER_DNS_MEMORY_LIMIT}@" \
 >        coredns.yaml
@@ -773,7 +783,7 @@ root@master-1:~/k8s-v1.23.9/coredns-v1.8.6# sed -i -e "s@__DNS__DOMAIN__@${CLUST
 
 #### 3、创建coredns资源：
 ```shell
-root@master-1:~/k8s-v1.23.9/coredns-v1.8.6# kubectl apply -f coredns.yaml
+root@master01:~/k8s-v1.23.17/coredns-v1.8.6# kubectl apply -f coredns.yaml
 serviceaccount/coredns created
 clusterrole.rbac.authorization.k8s.io/system:coredns created
 clusterrolebinding.rbac.authorization.k8s.io/system:coredns created
@@ -784,14 +794,14 @@ service/kube-dns created
 
 #### 4、查看pod状态：
 ```shell
-root@master-1:~/k8s-v1.23.9/coredns-v1.8.6# kubectl get pods -A -o wide
+root@master01:~/k8s-v1.23.17/coredns-v1.8.6# kubectl get pods -A -o wide
 NAMESPACE     NAME                                       READY   STATUS    RESTARTS   AGE   IP             NODE       NOMINATED NODE   READINESS GATES
-kube-system   calico-kube-controllers-867987dd7c-9zr9f   1/1     Running   0          21m   10.244.0.2     master-2   <none>           <none>
-kube-system   calico-node-4qnm5                          1/1     Running   0          21m   10.0.0.182     master-2   <none>           <none>
-kube-system   calico-node-9vbc8                          1/1     Running   0          21m   10.0.0.183     master-3   <none>           <none>
-kube-system   calico-node-d92c8                          1/1     Running   0          21m   10.0.0.181     master-1   <none>           <none>
-kube-system   coredns-54d7c66b75-glmmz                   1/1     Running   0          22s   10.244.1.2     master-1   <none>           <none>
-kube-system   coredns-54d7c66b75-jwq8j                   1/1     Running   0          22s   10.244.2.2     master-3   <none>           <none>
+kube-system   calico-kube-controllers-867987dd7c-9zr9f   1/1     Running   0          21m   10.244.0.2     master02   <none>           <none>
+kube-system   calico-node-4qnm5                          1/1     Running   0          21m   10.20.1.202    master02   <none>           <none>
+kube-system   calico-node-9vbc8                          1/1     Running   0          21m   10.20.1.203    master03   <none>           <none>
+kube-system   calico-node-d92c8                          1/1     Running   0          21m   10.20.1.201    master01   <none>           <none>
+kube-system   coredns-54d7c66b75-glmmz                   1/1     Running   0          22s   10.244.1.2     master01   <none>           <none>
+kube-system   coredns-54d7c66b75-jwq8j                   1/1     Running   0          22s   10.244.2.2     master03   <none>           <none>
 ```
 
 
