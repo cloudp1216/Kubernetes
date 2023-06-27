@@ -42,7 +42,7 @@ https://github.com/etcd-io/etcd/releases/download/v3.5.4/etcd-v3.5.4-linux-amd64
 - Service代理模型：ipvs（调度算法默认采用lc）
 - Service端口范围：30000 - 50000
 - Cluster Domain：cluster.local
-- Kubernetes和etcd证书默认签发时长：20年
+- Kubernetes和etcd证书默认签发时长：50年
 - Kubelet证书默认签发时长：10年
 
 #### 5、软件包下载地址：
