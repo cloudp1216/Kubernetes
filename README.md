@@ -897,8 +897,6 @@ clusterrolebinding.rbac.authorization.k8s.io/traefik-ingress-controller created
 ```shell
 root@master01:~/k8s-v1.23.17/ingress-controllers/traefik-v2.9.6# cat traefik-ingress-controller.yaml | grep image: -n
 21:          image: traefik:v2.9.6
-```
-```shell
 root@master01:~/k8s-v1.23.17/ingress-controllers/traefik-v2.9.6# vi traefik-ingress-controller.yaml +21  # 将镜像调整为以下（镜像要提前下载并推送到本地镜像仓库）
 21:          image: hub.speech.local/traefik/traefik:v2.9.6
 ```
@@ -948,26 +946,25 @@ root@master01:~/k8s-v1.23.17/ingress-controllers/traefik-v2.9.6# kubectl apply -
 ingressroute.traefik.containo.us/traefik-dashboard created
 ```
 
-#### 7、通过浏览器能够打开traefik控制台（确保traefik.speech.local域名能够正常解析）：
+#### 7、通过浏览器访问https://traefik.speech.local能够打开traefik控制台（确保traefik.speech.local域名能够正常解析到集群）：
 ![](./img/traefik-ui.png)
 
 
-
-## 八、部署Dashboard
+## 九、部署Dashboard
 #### 1、调整dashboard镜像仓库地址：
 ```shell
-root@master-1:~# cd k8s-v1.23.9/dashboard-v2.5.1/
-root@master-1:~/k8s-v1.23.9/dashboard-v2.5.1# cat recommended.yaml | grep image: -n
+root@master01:~# cd k8s-v1.23.17/dashboard-v2.5.1/
+root@master01:~/k8s-v1.23.17/dashboard-v2.5.1# cat recommended.yaml | grep image: -n
 194:          image: kubernetesui/dashboard:v2.5.1
 279:          image: kubernetesui/metrics-scraper:v1.0.7
-root@master-1:~/k8s-v1.23.9/dashboard-v2.5.1# vi recommended.yaml     # 将镜像调整为以下（镜像要提前下载并推送到本地镜像仓库）：
+root@master01:~/k8s-v1.23.17/dashboard-v2.5.1# vi recommended.yaml     # 将镜像调整为以下（镜像要提前下载并推送到本地镜像仓库）
 194:          image: hub.speech.local/kubernetesui/dashboard:v2.5.1
 279:          image: hub.speech.local/kubernetesui/metrics-scraper:v1.0.7
 ```
 
 #### 2、创建dashboard资源：
 ```shell
-root@master-1:~/k8s-v1.23.9/dashboard-v2.5.1# kubectl apply -f recommended.yaml
+root@master01:~/k8s-v1.23.9/dashboard-v2.5.1# kubectl apply -f recommended.yaml
 namespace/kubernetes-dashboard created
 serviceaccount/kubernetes-dashboard created
 service/kubernetes-dashboard created
@@ -984,48 +981,71 @@ service/dashboard-metrics-scraper created
 deployment.apps/dashboard-metrics-scraper created
 ```
 
-#### 3、创建ServiceAccount账号dashboard-view（注意该账号只有查看权限）
+#### 3、创建sa账号dashboard-view（注意该账号只有查看权限）：
 ```shell
-root@master-1:~/k8s-v1.23.9/dashboard-v2.5.1# kubectl apply -f dashboard-view.yaml 
+root@master01:~/k8s-v1.23.17/dashboard-v2.5.1# kubectl apply -f dashboard-view.yaml 
 serviceaccount/dashboard-view created
 clusterrolebinding.rbac.authorization.k8s.io/dashboard-view created
 ```
 
-#### 4、查看pod状态：
+#### 4、创建kubernetes ui访问证书：
 ```shell
-root@master-1:~/k8s-v1.23.9/dashboard-v2.5.1# kubectl get pods -A -o wide
-NAMESPACE              NAME                                         READY   STATUS    RESTARTS      AGE     IP             NODE       NOMINATED NODE   READINESS GATES
-kube-system            calico-kube-controllers-867987dd7c-9zr9f     1/1     Running   1 (47m ago)   77m     10.244.0.2     master-2   <none>           <none>
-kube-system            calico-node-4qnm5                            1/1     Running   1 (47m ago)   77m     10.0.0.182     master-2   <none>           <none>
-kube-system            calico-node-9vbc8                            1/1     Running   1 (47m ago)   77m     10.0.0.183     master-3   <none>           <none>
-kube-system            calico-node-d92c8                            1/1     Running   1 (47m ago)   77m     10.0.0.181     master-1   <none>           <none>
-kube-system            coredns-54d7c66b75-glmmz                     1/1     Running   1 (47m ago)   57m     10.244.1.2     master-1   <none>           <none>
-kube-system            coredns-54d7c66b75-jwq8j                     1/1     Running   1 (46m ago)   57m     10.244.2.2     master-3   <none>           <none>
-kube-system            metrics-server-6c865bb754-9ms5p              1/1     Running   0             15m     10.244.0.3     master-2   <none>           <none>
-kubernetes-dashboard   dashboard-metrics-scraper-57865dcc68-z6qrf   1/1     Running   0             6m15s   10.244.1.3     master-1   <none>           <none>
-kubernetes-dashboard   kubernetes-dashboard-6647b9b8d8-tr65p        1/1     Running   0             6m15s   10.244.0.4     master-2   <none>           <none>
+root@master01:~/k8s-v1.23.17/dashboard-v2.5.1# ./create_cert.sh dashboard.speech.local
+OK
 ```
 
-#### 5、获取dashboard-view账号token值：
+#### 5、创建secret tls资源：
 ```shell
-root@master-1:~/k8s-v1.23.9/dashboard-v2.5.1# ./get_token.sh 
-eyJhbGciOiJSUzI1NiIsImtpZCI6IlpGd2N0bm9aM042MjYwYTg5Smo5NG9O.....
+root@master01:~/k8s-v1.23.17/dashboard-v2.5.1# kubectl create secret tls dashboard.speech.local --cert=dashboard.speech.local.crt --key=dashboard.speech.local.key -n kubernetes-dashboard
+secret/dashboard.speech.local created
 ```
 
-#### 6、获取dashboard NodePort（此处端口自动分配为：34168）
+#### 6、生成dashboard.speech.local路由规则（Traefik要提前部署）
 ```shell
-root@master-1:~/k8s-v1.23.9/dashboard-v2.5.1# kubectl get svc -A -o wide
-NAMESPACE              NAME                        TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                  AGE     SELECTOR
-default                kubernetes                  ClusterIP   10.254.0.1       <none>        443/TCP                  149m    <none>
-kube-system            kube-dns                    ClusterIP   10.254.0.2       <none>        53/UDP,53/TCP,9153/TCP   54m     k8s-app=kube-dns
-kube-system            metrics-server              ClusterIP   10.254.157.176   <none>        443/TCP                  13m     k8s-app=metrics-server
-kubernetes-dashboard   dashboard-metrics-scraper   ClusterIP   10.254.133.164   <none>        8000/TCP                 3m28s   k8s-app=dashboard-metrics-scraper
-kubernetes-dashboard   kubernetes-dashboard        NodePort    10.254.48.190    <none>        443:34168/TCP            3m28s   k8s-app=kubernetes-dashboard
+root@master01:~/k8s-v1.23.17/dashboard-v2.5.1# vi kubernetes-ui.yaml
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: kubernetes-dashboard
+  namespace: kubernetes-dashboard
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  - match: Host(`dashboard.speech.local`) && PathPrefix(`/`)
+    kind: Rule
+    priority: 10
+    services:
+    - kind: Service
+      name: kubernetes-dashboard
+      namespace: kubernetes-dashboard
+      port: 443
+      serversTransport: dashboard
+  tls:
+    secretName: dashboard.speech.local
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: ServersTransport
+metadata:
+  name: dashboard
+  namespace: kubernetes-dashboard
+spec:
+  insecureSkipVerify: true
+```
+```shell
+root@master01:~/k8s-v1.23.17/dashboard-v2.5.1# kubectl apply -f kubernetes-ui.yaml
+ingressroute.traefik.containo.us/kubernetes-dashboard created
+serverstransport.traefik.containo.us/dashboard created
 ```
 
-#### 7、当前集群暂未添加node，访问任意master节点ip（ 例如：https://10.0.0.183:34168 ）即可打开dashboard界面：
-![](./img/dashboard-1.png)
-![](./img/dashboard-2.png)
+#### 7、获取dashboard-view账号token值：
+```shell
+root@master01:~/k8s-v1.23.17/dashboard-v2.5.1# ./get_token.sh 
+eyJhbGciOiJSUzI1NiIsImtpZCI6IktiMm.....
+```
+
+#### 8、通过浏览器访问https://dashboard.speech.local能够打开kubernetes控制台（确保dashboard.speech.local域名能够正常解析到集群）：
+![](./img/kubernetes-ui.png)
 
 
 ## 九、给Master节点添加污点并重启控制平面
