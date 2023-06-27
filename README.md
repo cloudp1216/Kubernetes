@@ -349,7 +349,7 @@ root@master01:~/k8s-v1.23.17/pkgs# ssh root@master02 'cd /root && dpkg -i k8s-ku
 root@master01:~/k8s-v1.23.17/pkgs# ssh root@master03 'cd /root && dpkg -i k8s-kubernetes-master-1.23.17_amd64.deb k8s-kubernetes-node-1.23.17_amd64.deb'
 ```
 
-#### 2、在master-1节点初始化kubernetes集群证书：
+#### 2、在master01节点初始化kubernetes集群证书：
 ```shell
 root@master01:~# cd /k8s/kubernetes/ssl/cfssl-tools
 root@master01:/k8s/kubernetes/ssl/cfssl-tools# vi kube-apiserver-csr.json  # 注意以双下滑线开头结尾的配置项需要调整
