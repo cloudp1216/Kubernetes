@@ -38,7 +38,8 @@ k8s-v1.23.17/k8s-kubernetes-node                                 通过dpkg -b�
 k8s-v1.23.17/k8s-slb-v1.16.1                                     通过dpkg -b命令将该目录打包为k8s-slb-1.16.1_amd64.deb安装包，方便部署
 
 注意：
-k8s-etcd、k8s-kubernetes-master、k8s-kubernetes-node包中二进制程序由官方下载（链接如下），此处仅做了二次封装，k8s-slb由nginx-1.16.1.tar.gz源码编译，未更改过任何源代码
+k8s-etcd、k8s-kubernetes-master、k8s-kubernetes-node包中二进制程序由官方下载（链接如下），此处仅做了二次封装，k8s-slb由nginx-1.16.1.tar.gz（官方下载）源码编译，未更改过任何源代码
+https://github.com/etcd-io/etcd/releases/download/v3.5.6/etcd-v3.5.6-linux-amd64.tar.gz
 https://dl.k8s.io/v1.23.17/kubernetes-server-linux-amd64.tar.gz
 ```
 
