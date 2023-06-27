@@ -643,7 +643,7 @@ KUBELET_ARGS=" \
     --cert-dir=/k8s/kubernetes/ssl \
     --hairpin-mode=promiscuous-bridge \
     --serialize-image-pulls=false \
-    --pod-infra-container-image=hub.speech.local/registry.k8s.io/pause:3.6 \  # 调整此项，pause镜像要提前推送到本地镜像仓库
+    --pod-infra-container-image=hub.speech.local/registry.k8s.io/pause:3.6 \  # 调整此项（镜像要提前下载并推送到本地镜像仓库）
     --v=2"
 ```
 
@@ -693,7 +693,7 @@ root@master01:~/k8s-v1.23.17/calico-v3.22.5# cat calico.yaml | grep image: -n
 4675:          image: docker.io/calico/kube-controllers:v3.22.5
 ```
 ```shell
-root@master01:~/k8s-v1.23.17/calico-v3.22.5# vi calico.yaml                 # 将镜像调整为以下（镜像要提前下载并推送到本地镜像仓库）：              
+root@master01:~/k8s-v1.23.17/calico-v3.22.5# vi calico.yaml                 # 将镜像调整为以下（镜像要提前下载并推送到本地镜像仓库）             
 4217:      - image: hub.speech.local/calico/typha:v3.22.5
 4333:          image: hub.speech.local/calico/cni:v3.22.5
 4360:          image: hub.speech.local/calico/cni:v3.22.5
@@ -766,7 +766,7 @@ root@master01:~/k8s-v1.23.17/coredns-v1.8.6# cat coredns.yaml | grep image: -n
 143:        image: registry.cn-hangzhou.aliyuncs.com/google_containers/coredns:v1.8.6
 ```
 ```shell
-root@master01:~/k8s-v1.23.17/coredns-v1.8.6# vi coredns.yaml +143       # 将镜像调整为以下（镜像要提前下载并推送到本地镜像仓库）：
+root@master01:~/k8s-v1.23.17/coredns-v1.8.6# vi coredns.yaml +143       # 将镜像调整为以下（镜像要提前下载并推送到本地镜像仓库）
 143:        image: hub.speech.local/registry.k8s.io/coredns:v1.8.6
 ```
 
@@ -806,26 +806,28 @@ kube-system   coredns-54d7c66b75-jwq8j                   1/1     Running   0    
 
 
 ## 七、部署MetricsServer
-#### 1、部署metrics-server前查看集群核心指标：
+#### 1、部署metrics-server前无法查看集群核心指标：
 ```shell
-root@master-1:~# kubectl top node
+root@master01:~# kubectl top node
 error: Metrics API not available
-root@master-1:~# kubectl top pod -A
+root@master01:~# kubectl top pod -A
 error: Metrics API not available
 ```
 
 #### 2、调整metrics-server镜像为本地仓库：
 ```shell
-root@master-1:~# cd k8s-v1.23.9/metrics-server-v0.6.1
-root@master-1:~/k8s-v1.23.9/metrics-server-v0.6.1# cat components.yaml | grep image: -n
+root@master01:~# cd k8s-v1.23.17/metrics-server-v0.6.1
+root@master01:~/k8s-v1.23.17/metrics-server-v0.6.1# cat components.yaml | grep image: -n
 141:        image: registry.cn-hangzhou.aliyuncs.com/google_containers/metrics-server:v0.6.1
-root@master-1:~/k8s-v1.23.9/metrics-server-v0.6.1# vi components.yaml +141      # 将镜像调整为以下（镜像要提前下载并推送到本地镜像仓库）：
-141:        image: hub.speech.local/k8s.gcr.io/metrics-server:v0.6.1
+```
+```shell
+root@master01:~/k8s-v1.23.17/metrics-server-v0.6.1# vi components.yaml +141      # 将镜像调整为以下（镜像要提前下载并推送到本地镜像仓库）
+141:        image: hub.speech.local/registry.k8s.io/metrics-server:v0.6.1
 ```
 
 #### 3、创建metrics-server资源：
 ```shell
-root@master-1:~/k8s-v1.23.9/metrics-server-v0.6.1# kubectl apply -f components.yaml
+root@master01:~/k8s-v1.23.17/metrics-server-v0.6.1# kubectl apply -f components.yaml
 serviceaccount/metrics-server created
 clusterrole.rbac.authorization.k8s.io/system:aggregated-metrics-reader created
 clusterrole.rbac.authorization.k8s.io/system:metrics-server created
@@ -839,12 +841,12 @@ apiservice.apiregistration.k8s.io/v1beta1.metrics.k8s.io created
 
 #### 4、查看pod状态：
 ```shell
-root@master-1:~# kubectl get pods -A -o wide
+root@master01:~# kubectl get pods -A -o wide
 NAMESPACE     NAME                                       READY   STATUS    RESTARTS      AGE   IP             NODE       NOMINATED NODE   READINESS GATES
 kube-system   calico-kube-controllers-867987dd7c-9zr9f   1/1     Running   1 (32m ago)   62m   10.244.0.2     master-2   <none>           <none>
-kube-system   calico-node-4qnm5                          1/1     Running   1 (32m ago)   62m   10.0.0.182     master-2   <none>           <none>
-kube-system   calico-node-9vbc8                          1/1     Running   1 (32m ago)   62m   10.0.0.183     master-3   <none>           <none>
-kube-system   calico-node-d92c8                          1/1     Running   1 (32m ago)   62m   10.0.0.181     master-1   <none>           <none>
+kube-system   calico-node-4qnm5                          1/1     Running   1 (32m ago)   62m   10.20.1.202    master-2   <none>           <none>
+kube-system   calico-node-9vbc8                          1/1     Running   1 (32m ago)   62m   10.20.1.203    master-3   <none>           <none>
+kube-system   calico-node-d92c8                          1/1     Running   1 (32m ago)   62m   10.20.1.201    master-1   <none>           <none>
 kube-system   coredns-54d7c66b75-glmmz                   1/1     Running   1 (32m ago)   42m   10.244.1.2     master-1   <none>           <none>
 kube-system   coredns-54d7c66b75-jwq8j                   1/1     Running   1 (31m ago)   42m   10.244.2.2     master-3   <none>           <none>
 kube-system   metrics-server-6c865bb754-9ms5p            1/1     Running   0             59s   10.244.0.3     master-2   <none>           <none>
@@ -852,11 +854,11 @@ kube-system   metrics-server-6c865bb754-9ms5p            1/1     Running   0    
 
 #### 5、查看核心指标：
 ```shell
-root@master-1:~# kubectl top node
+root@master01:~# kubectl top node
 NAME       CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   
-master-1   219m         10%    1006Mi          53%       
-master-2   246m         12%    794Mi           41%       
-master-3   211m         10%    805Mi           42%       
+master01   219m         1%     3094Mi          6%       
+master02   246m         1%     2547Mi          7%       
+master03   211m         1%     2416Mi          7%       
 root@master-1:~# kubectl top pod -A
 NAMESPACE     NAME                                       CPU(cores)   MEMORY(bytes)   
 kube-system   calico-kube-controllers-867987dd7c-9zr9f   4m           22Mi            
@@ -867,6 +869,88 @@ kube-system   coredns-54d7c66b75-glmmz                   3m           11Mi
 kube-system   coredns-54d7c66b75-jwq8j                   2m           11Mi            
 kube-system   metrics-server-6c865bb754-9ms5p            6m           15Mi    
 ```
+
+## 八、部署Traefik
+#### 1、创建traefik crd和rbac：
+```shell
+root@master01:~# cd k8s-v1.23.17/ingress-controllers/traefik-v2.9.6
+root@master01:~/k8s-v1.23.17/ingress-controllers/traefik-v2.9.6# kubectl apply -f kubernetes-crd-definition-v1.yml
+customresourcedefinition.apiextensions.k8s.io/ingressroutes.traefik.containo.us created
+customresourcedefinition.apiextensions.k8s.io/ingressroutetcps.traefik.containo.us created
+customresourcedefinition.apiextensions.k8s.io/ingressrouteudps.traefik.containo.us created
+customresourcedefinition.apiextensions.k8s.io/middlewares.traefik.containo.us created
+customresourcedefinition.apiextensions.k8s.io/middlewaretcps.traefik.containo.us created
+customresourcedefinition.apiextensions.k8s.io/serverstransports.traefik.containo.us created
+customresourcedefinition.apiextensions.k8s.io/tlsoptions.traefik.containo.us created
+customresourcedefinition.apiextensions.k8s.io/tlsstores.traefik.containo.us created
+customresourcedefinition.apiextensions.k8s.io/traefikservices.traefik.containo.us created
+```
+```shell
+root@master01:~/k8s-v1.23.17/ingress-controllers/traefik-v2.9.6# kubectl apply -f kubernetes-crd-rbac.yml
+namespace/traefik-ingress created
+serviceaccount/traefik-ingress-controller created
+clusterrole.rbac.authorization.k8s.io/traefik-ingress-controller created
+clusterrolebinding.rbac.authorization.k8s.io/traefik-ingress-controller created
+```
+
+#### 2、调整traefik镜像：
+```shell
+root@master01:~/k8s-v1.23.17/ingress-controllers/traefik-v2.9.6# cat traefik-ingress-controller.yaml | grep image: -n
+21:          image: traefik:v2.9.6
+```
+```shell
+root@master01:~/k8s-v1.23.17/ingress-controllers/traefik-v2.9.6# vi traefik-ingress-controller.yaml +21  # 将镜像调整为以下（镜像要提前下载并推送到本地镜像仓库）
+21:          image: hub.speech.local/traefik/traefik:v2.9.6
+```
+
+#### 3、创建traefik-ingress-controller：
+```shell
+root@master01:~/k8s-v1.23.17/ingress-controllers/traefik-v2.9.6# kubectl apply -f traefik-ingress-controller.yaml
+daemonset.apps/traefik created
+```
+
+#### 4、创建traefik ui访问证书：
+```shell
+root@master01:~/k8s-v1.23.17/ingress-controllers/traefik-v2.9.6# ./create_cert.sh traefik.speech.local
+OK
+```
+
+#### 5、创建secret tls资源：
+```shell
+root@master01:~/k8s-v1.23.17/ingress-controllers/traefik-v2.9.6# kubectl create secret tls traefik.speech.local --cert=traefik.speech.local.crt --key=traefik.speech.local.key -n traefik-ingress
+secret/traefik.speech.local created
+```
+
+#### 6、生成traefik.speech.local路由规则：
+```shell
+root@master01:~/k8s-v1.23.17/ingress-controllers/traefik-v2.9.6# vi traefik-ui.yaml
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-dashboard
+  namespace: traefik-ingress
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  - match: Host(`traefik.speech.local`) && PathPrefix(`/`)
+    kind: Rule
+    services:
+    - name: api@internal
+      kind: TraefikService
+  tls:
+    secretName: traefik.speech.local
+    domains:
+    - main: traefik.speech.local
+```
+```shell
+root@master01:~/k8s-v1.23.17/ingress-controllers/traefik-v2.9.6# kubectl apply -f traefik-ui.yaml
+ingressroute.traefik.containo.us/traefik-dashboard created
+```
+
+#### 7、通过浏览器能够打开traefik控制台（确保traefik.speech.local域名能够正常解析）：
+![](./img/traefik-ui.png)
+
 
 
 ## 八、部署Dashboard
