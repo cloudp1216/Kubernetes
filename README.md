@@ -1231,15 +1231,21 @@ UDP  10.254.0.2:53 lc
 ```shell
 root@master01:~# kubectl label node master01 node-role.kubernetes.io/master01=
 root@master01:~# kubectl label node master01 node-role.kubernetes.io/etcd-1=
-root@master01:~# kubectl label node master02 node-role.kubernetes.io/master01=
-root@master01:~# kubectl label node master02 node-role.kubernetes.io/etcd-1=
-root@master01:~# kubectl label node master03 node-role.kubernetes.io/master01=
-root@master01:~# kubectl label node master03 node-role.kubernetes.io/etcd-1=
+root@master01:~# kubectl label node master02 node-role.kubernetes.io/master02=
+root@master01:~# kubectl label node master02 node-role.kubernetes.io/etcd-2=
+root@master01:~# kubectl label node master03 node-role.kubernetes.io/master03=
+root@master01:~# kubectl label node master03 node-role.kubernetes.io/etcd-3=
 root@master01:~# kubectl label node node01 node-role.kubernetes.io/NVIDIA-A100-PCIE-40GB.4=      # .4表示4块GPU卡
 ```
 
+#### 12、给节点添加标签（在master执行）：
+```shell
+root@master01:~# kubectl label node node01 GPU.Support=true
+root@master01:~# kubectl label node node01 GPU.DeviceCount=4
+root@master01:~# kubectl label node node01 GPU.Model.NVIDIA-A100-PCIE-40GB=4
+```
 
-#### 12、按照以上操作分别添加其它node节点：
+#### 13、按照以上操作分别添加其它node节点：
 ```shell
 root@master01:~# kubectl get node -o wide
 NAME       STATUS   ROLES                        AGE   VERSION    INTERNAL-IP   EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION       CONTAINER-RUNTIME
