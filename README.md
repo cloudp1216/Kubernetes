@@ -56,7 +56,7 @@ https://dl.k8s.io/v1.23.17/kubernetes-server-linux-amd64.tar.gz
 - 配置时间同步
 - 配置时区为Asia/Shanghai
 - 配置主机名
-- 配置master-1到master-2、master-3免密登录
+- 配置master01到master02、master03免密登录
 - 关闭并卸载unattended-upgrades自动更新服务
 - 提前安装ipvsadm、ipset
 - 提前安装私有镜像仓库Harbor（当前Harbor域名解析为：hub.speech.local）
