@@ -1303,9 +1303,9 @@ spec:
 ```shell
 root@master01:~# kubectl apply -f test.yaml
 deployment.apps/test created
-root@master01:~# kubectl get pods -n default
-NAME                    READY   STATUS    RESTARTS   AGE
-test-779c85cdd4-nrvn2   1/1     Running   0          111s
+root@master03:~# kubectl get pods -o wide
+NAME                    READY   STATUS    RESTARTS   AGE     IP            NODE     NOMINATED NODE   READINESS GATES
+test-779c85cdd4-nrvn2   1/1     Running   0          6m48s   10.244.7.16   node05   <none>           <none>
 ```
 ```shell
 root@master01:~# kubectl exec -it test-779c85cdd4-nrvn2 -- bash
