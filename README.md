@@ -1048,30 +1048,46 @@ eyJhbGciOiJSUzI1NiIsImtpZCI6IktiMm.....
 ![](./img/kubernetes-ui.png)
 
 
-## 九、给Master节点添加污点并重启控制平面
+## 十、部署k8s-device-plugin（如果集群没有GPU设备则无需部署）
+#### 1、调整nvidia-device-plugin为本地仓库：
+```shell
+root@master01:~/k8s-v1.23.17/k8s-device-plugin-v0.13.0# cat nvidia-device-plugin.yml -n | grep image:
+41        - image: nvcr.io/nvidia/k8s-device-plugin:v0.13.0
+root@master01:~/k8s-v1.23.17/k8s-device-plugin-v0.13.0# vi nvidia-device-plugin.yml
+41        - image: hub.speech.local/nvidia/k8s-device-plugin:v0.13.0
+```
+
+#### 2、创建nvidia-device-plugin资源：
+```shell
+root@master01:~/k8s-v1.23.17/k8s-device-plugin-v0.13.0# kubectl apply -f nvidia-device-plugin.yml
+daemonset.apps/nvidia-device-plugin-daemonset created
+```
+
+
+## 十一、给Master节点添加污点并重启控制平面
 #### 1、给master节点添加污点，master作为集群控制平面一般不会运行工作负载，对于未容忍污点的用户pod应禁止调度到master节点：
 ```shell
-root@master-1:~# kubectl taint node master-1 node-role.kubernetes.io/master:NoSchedule
-node/master-1 tainted
-root@master-1:~# kubectl taint node master-2 node-role.kubernetes.io/master:NoSchedule
-node/master-2 tainted
-root@master-1:~# kubectl taint node master-3 node-role.kubernetes.io/master:NoSchedule
-node/master-3 tainted
+root@master01:~# kubectl taint node master01 node-role.kubernetes.io/master:NoSchedule
+node/master01 tainted
+root@master01:~# kubectl taint node master02 node-role.kubernetes.io/master:NoSchedule
+node/master02 tainted
+root@master01:~# kubectl taint node master03 node-role.kubernetes.io/master:NoSchedule
+node/master03 tainted
 ```
 
 #### 2、重启后master节点自动调整service代理模型为ipvs（取决于deb包中自动加载的内核模块）：
 ```shell
-root@master-1:~# dpkg -c k8s-v1.23.9/pkgs/k8s-kubernetes-node-1.23.9+bionic_amd64.deb | grep k8s.conf
--rw-r--r-- root/root        28 2022-07-18 16:54 ./etc/modules-load.d/k8s.conf
--rw-r--r-- root/root       103 2022-07-18 16:54 ./etc/sysctl.d/k8s.conf
-root@master-1:~# ipvsadm -ln
+root@master01:~# dpkg -c k8s-v1.23.17/docker-ce-v20.10.12/containerd.io-1.6.8_amd64.deb | grep k8s.conf
+-rw-r--r-- root/root        49 2022-10-20 17:44 ./etc/modules-load.d/k8s.conf
+-rw-r--r-- root/root       103 2022-10-18 23:24 ./etc/sysctl.d/k8s.conf
+root@master01:~# ipvsadm -ln
 IP Virtual Server version 1.2.1 (size=4096)
 Prot LocalAddress:Port Scheduler Flags
   -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
 TCP  10.254.0.1:443 lc
-  -> 10.0.0.181:6443              Masq    1      1          0         
-  -> 10.0.0.182:6443              Masq    1      1          0         
-  -> 10.0.0.183:6443              Masq    1      1          0         
+  -> 10.20.1.201:6443             Masq    1      1          0         
+  -> 10.20.1.202:6443             Masq    1      1          0         
+  -> 10.20.1.203:6443             Masq    1      1          0         
 TCP  10.254.0.2:53 lc
   -> 10.244.1.2:53                Masq    1      0          0         
   -> 10.244.2.2:53                Masq    1      0          0         
@@ -1084,37 +1100,37 @@ UDP  10.254.0.2:53 lc
 ```
 
 
-## 十、添加Node节点到集群（其它Node操作一致）
-#### 1、复制k8s-kubernetes-node-1.23.9+bionic_amd64.deb、k8s-slb-1.16.1+bionic_amd64.deb到node节点：
+## 十二、添加Node节点到集群（其它Node操作一致）
+#### 1、复制k8s-kubernetes-node-1.23.17_amd64.deb、k8s-slb-1.16.1_amd64.deb到node节点：
 ```shell
-root@master-1:~# cd k8s-v1.23.9/pkgs
-root@master-1:~/k8s-v1.23.9/pkgs# scp k8s-kubernetes-node-1.23.9+bionic_amd64.deb k8s-slb-1.16.1+bionic_amd64.deb root@10.0.0.184:/root
+root@master01:~# cd k8s-v1.23.17/pkgs
+root@master-1:~/k8s-v1.23.17/pkgs# scp k8s-kubernetes-node-1.23.17_amd64.deb k8s-slb-1.16.1_amd64.deb root@node01:/root
 ```
 
 #### 2、在node节点安装以下软件包：
 ```shell
-root@node-1:~# dpkg -i k8s-kubernetes-node-1.23.9+bionic_amd64.deb k8s-slb-1.16.1+bionic_amd64.deb 
+root@node01:~# dpkg -i k8s-kubernetes-node-1.23.17_amd64.deb k8s-slb-1.16.1_amd64.deb
 Selecting previously unselected package k8s-kubernetes-node.
-(Reading database ... 66815 files and directories currently installed.)
-Preparing to unpack k8s-kubernetes-node-1.23.9+bionic_amd64.deb ...
-Unpacking k8s-kubernetes-node (1.23.9+bionic) ...
+(Reading database ... 168175 files and directories currently installed.)
+Preparing to unpack k8s-kubernetes-node-1.23.17_amd64.deb ...
+Unpacking k8s-kubernetes-node (1.23.17) ...
 Selecting previously unselected package k8s-slb.
-Preparing to unpack k8s-slb-1.16.1+bionic_amd64.deb ...
-Unpacking k8s-slb (1.16.1+bionic) ...
-Setting up k8s-kubernetes-node (1.23.9+bionic) ...
-Setting up k8s-slb (1.16.1+bionic) ...
+Preparing to unpack k8s-slb-1.16.1_amd64.deb ...
+Unpacking k8s-slb (1.16.1) ...
+Setting up k8s-kubernetes-node (1.23.17) ...
+Setting up k8s-slb (1.16.1) ...
 ```
 
 #### 3、调整slb服务指定kube-apiserver集群地址：
 ```shell
-root@node-1:~# cd /k8s/slb/cfg/nginx.conf.d
-root@node-1:/k8s/slb/cfg/nginx.conf.d# vi kube-apiserver.conf  # 注意所有双下滑杠开头结尾的配置项都需要调整
+root@node01:~# cd /k8s/slb/cfg/nginx.conf.d
+root@node01:/k8s/slb/cfg/nginx.conf.d# vi kube-apiserver.conf     # 注意所有双下滑杠开头结尾的配置项都需要调整
 
 upstream kube-apiserver {
     least_conn;
-    server 10.0.0.181:6443;
-    server 10.0.0.182:6443;
-    server 10.0.0.183:6443;
+    server 10.20.1.201:6443;
+    server 10.20.1.202:6443;
+    server 10.20.1.203:6443;
 }
 
 server {
@@ -1127,20 +1143,20 @@ server {
 
 #### 4、启动slb服务：
 ```shell
-root@node-1:~# systemctl start slb && systemctl enable slb
-root@node-1:~# ss -lnt | grep 6443
+root@node01:~# systemctl start slb && systemctl enable slb
+root@node01:~# ss -lnt | grep 6443
 LISTEN   0         128               127.0.0.1:6443             0.0.0.0:* 
 ```
 
 #### 5、从master复制bootstrap.kubeconfig、kube-proxy.kubeconfig到node节点：
 ```shell
-root@master-1:~# cd /k8s/kubernetes/cfg
-root@master-1:/k8s/kubernetes/cfg# scp bootstrap.kubeconfig kube-proxy.kubeconfig root@10.0.0.184:/k8s/kubernetes/cfg
+root@master01:~# cd /k8s/kubernetes/cfg
+root@master01:/k8s/kubernetes/cfg# scp bootstrap.kubeconfig kube-proxy.kubeconfig root@node01:/k8s/kubernetes/cfg
 ```
 
 #### 6、调整kubelet配置文件：
 ```shell
-root@node-1:~# vi /k8s/kubernetes/cfg/kubelet
+root@node01:~# vi /k8s/kubernetes/cfg/kubelet
 KUBELET_ARGS=" \
     --bootstrap-kubeconfig=/k8s/kubernetes/cfg/bootstrap.kubeconfig \
     --kubeconfig=/k8s/kubernetes/cfg/kubelet.kubeconfig \
@@ -1154,47 +1170,46 @@ KUBELET_ARGS=" \
     --cert-dir=/k8s/kubernetes/ssl \
     --hairpin-mode=promiscuous-bridge \
     --serialize-image-pulls=false \
-    --pod-infra-container-image=hub.speech.local/k8s.gcr.io/pause:3.6 \   # 调整此项，pause镜像要提前推送到本地镜像仓库
-    --logtostderr=true \
+    --pod-infra-container-image=hub.speech.local/registry.k8s.io/pause:3.6 \   # 调整此项
     --v=2"
 ```
 
 #### 7、启动kubelet、kube-proxy：
 ```shell
-root@node-1:~# systemctl start kubelet kube-proxy && systemctl enable kubelet kube-proxy
+root@node01:~# systemctl start kubelet kube-proxy && systemctl enable kubelet kube-proxy
 ```
 
 #### 8、允许node加入集群（在master执行）：
 ```shell
-root@master-1:~# kubectl get csr
+root@master01:~# kubectl get csr
 NAME                                                   AGE   SIGNERNAME                                    REQUESTOR           REQUESTEDDURATION   CONDITION
 node-csr-_EAK70MenWon3_8k2lBv4AgnynLEat-0fdrOXP15PHA   2m    kubernetes.io/kube-apiserver-client-kubelet   kubelet-bootstrap   <none>              Pending
-root@master-1:~# kubectl certificate approve node-csr-_EAK70MenWon3_8k2lBv4AgnynLEat-0fdrOXP15PHA
+root@master01:~# kubectl certificate approve node-csr-_EAK70MenWon3_8k2lBv4AgnynLEat-0fdrOXP15PHA
 certificatesigningrequest.certificates.k8s.io/node-csr-_EAK70MenWon3_8k2lBv4AgnynLEat-0fdrOXP15PHA approved
 ```
 
 #### 9、查看node状态：
 ```shell
-root@master-1:~# kubectl get node -o wide
-NAME       STATUS   ROLES    AGE     VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION       CONTAINER-RUNTIME
-master-1   Ready    <none>   4d23h   v1.23.9   10.0.0.181    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
-master-2   Ready    <none>   4d23h   v1.23.9   10.0.0.182    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
-master-3   Ready    <none>   4d23h   v1.23.9   10.0.0.183    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
-node-1     Ready    <none>   56s     v1.23.9   10.0.0.184    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
+root@master01:~# kubectl get node -o wide
+NAME       STATUS   ROLES    AGE   VERSION    INTERNAL-IP   EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION       CONTAINER-RUNTIME
+master01   Ready    <none>   22m   v1.23.17   10.20.1.201   <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
+master02   Ready    <none>   22m   v1.23.17   10.20.1.202   <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
+master03   Ready    <none>   22m   v1.23.17   10.20.1.203   <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
+node01     Ready    <none>    1m   v1.23.17   10.20.1.204   <none>        Ubuntu 20.04.6 LTS   5.4.0-144-generic    docker://20.10.12
 ```
 
 #### 10、重启node节点，service代理模型自动调整为ipvs：
 ```shell
-root@node-1:~# ipvsadm -ln
+root@node01:~# ipvsadm -ln
 IP Virtual Server version 1.2.1 (size=4096)
 Prot LocalAddress:Port Scheduler Flags
   -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
-TCP  10.0.0.184:34168 lc
+TCP  10.20.1.204:34168 lc
   -> 10.244.0.4:8443              Masq    1      0          0         
 TCP  10.254.0.1:443 lc
-  -> 10.0.0.181:6443              Masq    1      1          0         
-  -> 10.0.0.182:6443              Masq    1      1          0         
-  -> 10.0.0.183:6443              Masq    1      0          1         
+  -> 10.20.1.201:6443             Masq    1      1          0         
+  -> 10.20.1.202:6443             Masq    1      1          0         
+  -> 10.20.1.203:6443             Masq    1      0          1         
 TCP  10.254.0.2:53 lc
   -> 10.244.1.2:53                Masq    1      0          0         
   -> 10.244.2.2:53                Masq    1      0          0         
@@ -1212,16 +1227,31 @@ UDP  10.254.0.2:53 lc
   -> 10.244.2.2:53                Masq    1      0          0         
 ```
 
-#### 11、按照以上操作分别添加node-2、node-3后node状态：
+#### 11、给节点添加角色（在master执行）：
 ```shell
-root@master-1:~# kubectl get node -o wide
-NAME       STATUS   ROLES    AGE   VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION       CONTAINER-RUNTIME
-master-1   Ready    <none>   5d    v1.23.9   10.0.0.181    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
-master-2   Ready    <none>   5d    v1.23.9   10.0.0.182    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
-master-3   Ready    <none>   5d    v1.23.9   10.0.0.183    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
-node-1     Ready    <none>   42m   v1.23.9   10.0.0.184    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
-node-2     Ready    <none>   26m   v1.23.9   10.0.0.185    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
-node-3     Ready    <none>   11m   v1.23.9   10.0.0.186    <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
+root@master01:~# kubectl label node master01 node-role.kubernetes.io/master01=
+root@master01:~# kubectl label node master01 node-role.kubernetes.io/etcd-1=
+root@master01:~# kubectl label node master02 node-role.kubernetes.io/master01=
+root@master01:~# kubectl label node master02 node-role.kubernetes.io/etcd-1=
+root@master01:~# kubectl label node master03 node-role.kubernetes.io/master01=
+root@master01:~# kubectl label node master03 node-role.kubernetes.io/etcd-1=
+root@master01:~# kubectl label node node01 node-role.kubernetes.io/NVIDIA-A100-PCIE-40GB.4=      # .4表示4块GPU卡
+```
+
+
+#### 12、按照以上操作分别添加其它node节点：
+```shell
+root@master01:~# kubectl get node -o wide
+NAME       STATUS   ROLES                        AGE   VERSION    INTERNAL-IP   EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION       CONTAINER-RUNTIME
+master01   Ready    etcd-1,master01              2d    v1.23.17   10.20.1.201   <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
+master02   Ready    etcd-2,master02              2d    v1.23.17   10.20.1.202   <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
+master03   Ready    etcd-3,master03              2d    v1.23.17   10.20.1.203   <none>        Ubuntu 18.04.6 LTS   4.15.0-156-generic   docker://20.10.12
+node01     Ready    NVIDIA-A100-PCIE-40GB.4      2d    v1.23.17   10.20.1.204   <none>        Ubuntu 20.04.6 LTS   5.4.0-144-generic    docker://20.10.12
+node02     Ready    NVIDIA-A100-PCIE-40GB.4      2d    v1.23.17   10.20.1.205   <none>        Ubuntu 20.04.6 LTS   5.4.0-144-generic    docker://20.10.12
+node03     Ready    NVIDIA-A100-PCIE-40GB.4      2d    v1.23.17   10.20.1.206   <none>        Ubuntu 20.04.6 LTS   5.4.0-144-generic    docker://20.10.12
+node04     Ready    NVIDIA-A100-PCIE-40GB.4      2d    v1.23.17   10.20.1.207   <none>        Ubuntu 20.04.6 LTS   5.4.0-144-generic    docker://20.10.12
+node05     Ready    NVIDIA-A100-PCIE-40GB.4      2d    v1.23.17   10.20.1.208   <none>        Ubuntu 20.04.6 LTS   5.4.0-144-generic    docker://20.10.12
+node06     Ready    NVIDIA-A40.4                 12m   v1.23.17   10.20.1.209   <none>        Ubuntu 20.04.6 LTS   5.4.0-144-generic    docker://20.10.12
 ```
 
 
