@@ -1104,7 +1104,7 @@ UDP  10.254.0.2:53 lc
 #### 1、复制k8s-kubernetes-node-1.23.17_amd64.deb、k8s-slb-1.16.1_amd64.deb到node节点：
 ```shell
 root@master01:~# cd k8s-v1.23.17/pkgs
-root@master-1:~/k8s-v1.23.17/pkgs# scp k8s-kubernetes-node-1.23.17_amd64.deb k8s-slb-1.16.1_amd64.deb root@node01:/root
+root@master01:~/k8s-v1.23.17/pkgs# scp k8s-kubernetes-node-1.23.17_amd64.deb k8s-slb-1.16.1_amd64.deb root@node01:/root
 ```
 
 #### 2、在node节点安装以下软件包：
