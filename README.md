@@ -1299,7 +1299,7 @@ spec:
         - infinity
         resources:
           limits:
-            nvidia.com/gpu: 2             # 限制使用2卡
+            nvidia.com/gpu: 2
 ```
 
 #### 2、创建用户资源：
