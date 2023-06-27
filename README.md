@@ -114,7 +114,7 @@ root@master01# systemctl restart docker
 
 
 ## 二、部署ETCD集群
-#### 1、分别在etcd-1、etcd-2、etcd-3节点安装k8s-etcd-3.5.4+bionic_amd64.deb核心组件：
+#### 1、分别在etcd-1、etcd-2、etcd-3节点安装k8s-etcd-3.5.6_amd64.deb组件：
 ```shell
 root@master01:~# cd k8s-v1.23.17/pkgs/
 root@master01:~/k8s-v1.23.17/pkgs# dpkg -i k8s-etcd-3.5.6_amd64.deb 
