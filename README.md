@@ -1299,8 +1299,10 @@ spec:
         - infinity
         resources:
           limits:
-            nvidia.com/gpu: 2
+            nvidia.com/gpu: 2             # 限制使用2卡
 ```
+
+#### 2、创建用户资源：
 ```shell
 root@master01:~# kubectl apply -f test.yaml
 deployment.apps/test created
