@@ -328,37 +328,42 @@ root@master01:~# ssh root@master03 'systemctl status etcd'
 
 
 ## 三、部署Kubernetes集群
-#### 1、分别在master-1、master-2、master-3节点安装k8s-kubernetes-master-1.23.9+bionic_amd64.deb、k8s-kubernetes-node-1.23.9+bionic_amd64.deb核心组件：
+#### 1、分别在master01、master02、master03节点安装k8s-kubernetes-master-1.23.17_amd64.deb、k8s-kubernetes-node-1.23.17_amd64.deb核心组件：
 ```shell
-root@master-1:~# cd k8s-v1.23.9/pkgs/
-root@master-1:~/k8s-v1.23.9/pkgs# dpkg -i k8s-kubernetes-master-1.23.9+bionic_amd64.deb k8s-kubernetes-node-1.23.9+bionic_amd64.deb 
+root@master01:~# cd k8s-v1.23.17/pkgs/
+root@master01:~/k8s-v1.23.17/pkgs# dpkg -i k8s-kubernetes-master-1.23.17_amd64.deb k8s-kubernetes-node-1.23.17_amd64.deb 
 Selecting previously unselected package k8s-kubernetes-master.
-(Reading database ... 67136 files and directories currently installed.)
-Preparing to unpack k8s-kubernetes-master-1.23.9+bionic_amd64.deb ...
-Unpacking k8s-kubernetes-master (1.23.9+bionic) ...
+(Reading database ... 168149 files and directories currently installed.)
+Preparing to unpack k8s-kubernetes-master-1.23.17_amd64.deb ...
+Unpacking k8s-kubernetes-master (1.23.17) ...
 Selecting previously unselected package k8s-kubernetes-node.
-Preparing to unpack k8s-kubernetes-node-1.23.9+bionic_amd64.deb ...
-Unpacking k8s-kubernetes-node (1.23.9+bionic) ...
-Setting up k8s-kubernetes-master (1.23.9+bionic) ...
-Setting up k8s-kubernetes-node (1.23.9+bionic) ...
+Preparing to unpack k8s-kubernetes-node-1.23.17_amd64.deb ...
+Unpacking k8s-kubernetes-node (1.23.17) ...
+Setting up k8s-kubernetes-master (1.23.17) ...
+Setting up k8s-kubernetes-node (1.23.17) ...
 ```
 ```shell
-root@master-1:~/k8s-v1.23.9/pkgs# scp k8s-kubernetes-master-1.23.9+bionic_amd64.deb k8s-kubernetes-node-1.23.9+bionic_amd64.deb root@10.0.0.182:/root
-root@master-1:~/k8s-v1.23.9/pkgs# scp k8s-kubernetes-master-1.23.9+bionic_amd64.deb k8s-kubernetes-node-1.23.9+bionic_amd64.deb root@10.0.0.183:/root
-root@master-1:~/k8s-v1.23.9/pkgs# ssh root@10.0.0.182 'cd /root && dpkg -i k8s-kubernetes-master-1.23.9+bionic_amd64.deb k8s-kubernetes-node-1.23.9+bionic_amd64.deb'
-root@master-1:~/k8s-v1.23.9/pkgs# ssh root@10.0.0.183 'cd /root && dpkg -i k8s-kubernetes-master-1.23.9+bionic_amd64.deb k8s-kubernetes-node-1.23.9+bionic_amd64.deb'
+root@master01:~/k8s-v1.23.17/pkgs# scp k8s-kubernetes-master-1.23.17_amd64.deb k8s-kubernetes-node-1.23.17_amd64.deb root@master02:/root
+root@master01:~/k8s-v1.23.17/pkgs# scp k8s-kubernetes-master-1.23.17_amd64.deb k8s-kubernetes-node-1.23.17_amd64.deb root@master03:/root
+root@master01:~/k8s-v1.23.17/pkgs# ssh root@master02 'cd /root && dpkg -i k8s-kubernetes-master-1.23.17_amd64.deb k8s-kubernetes-node-1.23.17_amd64.deb'
+root@master01:~/k8s-v1.23.17/pkgs# ssh root@master03 'cd /root && dpkg -i k8s-kubernetes-master-1.23.17_amd64.deb k8s-kubernetes-node-1.23.17_amd64.deb'
 ```
 
 #### 2、在master-1节点初始化kubernetes集群证书：
 ```shell
-root@master-1:~# cd /k8s/kubernetes/ssl/cfssl-tools
-root@master-1:/k8s/kubernetes/ssl/cfssl-tools# vi kube-apiserver-csr.json  # 注意以双下滑线开头结尾的配置项需要调整
+root@master01:~# cd /k8s/kubernetes/ssl/cfssl-tools
+root@master01:/k8s/kubernetes/ssl/cfssl-tools# vi kube-apiserver-csr.json  # 注意以双下滑线开头结尾的配置项需要调整
 {
     "CN": "kubernetes",
     "hosts": [
-        "10.0.0.181",
-        "10.0.0.182",
-        "10.0.0.183",
+        "10.20.1.200",                             # 预留一个vip
+        "10.20.1.201",
+        "10.20.1.202",
+        "10.20.1.203",
+        "master.k8s.speech.local",                 # vip对应的域名
+        "master01.k8s.speech.local",
+        "master02.k8s.speech.local",
+        "master03.k8s.speech.local",
         "10.254.0.1",
         "127.0.0.1",
         "localhost",
@@ -382,51 +387,51 @@ root@master-1:/k8s/kubernetes/ssl/cfssl-tools# vi kube-apiserver-csr.json  # 注
         }
     ]
 }
-root@master-1:/k8s/kubernetes/ssl/cfssl-tools# ./init-certs.sh  # 初始化证书
+root@master01:/k8s/kubernetes/ssl/cfssl-tools# ./init-certs.sh  # 初始化证书
 Init Kubernetes Certs OK.
 Init Front Proxy Certs OK.
-root@master-1:/k8s/kubernetes/ssl/cfssl-tools# ls -lh ../
-total 108K
--rw-r--r-- 1 root root 1009 Jul 20 15:18 admin.csr
--rw------- 1 root root 1.7K Jul 20 15:18 admin-key.pem
--rw-r--r-- 1 root root 1.4K Jul 20 15:18 admin.pem
--rw-r--r-- 1 root root 1.1K Jul 20 15:18 ca.csr
--rw------- 1 root root 1.7K Jul 20 15:18 ca-key.pem
--rw-r--r-- 1 root root 1.3K Jul 20 15:18 ca.pem
-drwxr-xr-x 2 root root 4.0K Jul 20 15:17 cfssl-tools
--rw-r--r-- 1 root root  944 Jul 20 15:18 front-proxy-ca.csr
--rw------- 1 root root 1.7K Jul 20 15:18 front-proxy-ca-key.pem
--rw-r--r-- 1 root root 1.1K Jul 20 15:18 front-proxy-ca.pem
--rw-r--r-- 1 root root  903 Jul 20 15:18 front-proxy-client.csr
--rw------- 1 root root 1.7K Jul 20 15:18 front-proxy-client-key.pem
--rw-r--r-- 1 root root 1.2K Jul 20 15:18 front-proxy-client.pem
--rw-r--r-- 1 root root 1.3K Jul 20 15:18 kube-apiserver.csr
--rw------- 1 root root 1.7K Jul 20 15:18 kube-apiserver-key.pem
--rw-r--r-- 1 root root 1.6K Jul 20 15:18 kube-apiserver.pem
--rw-r--r-- 1 root root 1.1K Jul 20 15:18 kube-controller-manager.csr
--rw------- 1 root root 1.7K Jul 20 15:18 kube-controller-manager-key.pem
--rw-r--r-- 1 root root 1.4K Jul 20 15:18 kube-controller-manager.pem
--rw-r--r-- 1 root root 1009 Jul 20 15:18 kube-proxy.csr
--rw------- 1 root root 1.7K Jul 20 15:18 kube-proxy-key.pem
--rw-r--r-- 1 root root 1.4K Jul 20 15:18 kube-proxy.pem
--rw-r--r-- 1 root root 1017 Jul 20 15:18 kube-scheduler.csr
--rw------- 1 root root 1.7K Jul 20 15:18 kube-scheduler-key.pem
--rw-r--r-- 1 root root 1.4K Jul 20 15:18 kube-scheduler.pem
--rw------- 1 root root 1.7K Jul 20 15:18 sa.key
--rw-r--r-- 1 root root  451 Jul 20 15:18 sa.pub
+root@master01:/k8s/kubernetes/ssl/cfssl-tools# ls -lh ../
+total 120K
+-rw-r--r-- 1 root root 1009 Apr  2 16:37 admin.csr
+-rw------- 1 root root 1.7K Apr  2 16:37 admin-key.pem
+-rw-r--r-- 1 root root 1.4K Apr  2 16:37 admin.pem
+-rw-r--r-- 1 root root 1.1K Apr  2 16:37 ca.csr
+-rw------- 1 root root 1.7K Apr  2 16:37 ca-key.pem
+-rw-r--r-- 1 root root 1.3K Apr  2 16:37 ca.pem
+drwxr-xr-x 2 root root 4.0K Apr  2 16:37 cfssl-tools
+-rw-r--r-- 1 root root  944 Apr  2 16:37 front-proxy-ca.csr
+-rw------- 1 root root 1.7K Apr  2 16:37 front-proxy-ca-key.pem
+-rw-r--r-- 1 root root 1.1K Apr  2 16:37 front-proxy-ca.pem
+-rw-r--r-- 1 root root  903 Apr  2 16:37 front-proxy-client.csr
+-rw------- 1 root root 1.7K Apr  2 16:37 front-proxy-client-key.pem
+-rw-r--r-- 1 root root 1.2K Apr  2 16:37 front-proxy-client.pem
+-rw-r--r-- 1 root root 1.5K Apr  2 16:37 kube-apiserver.csr
+-rw------- 1 root root 1.7K Apr  2 16:37 kube-apiserver-key.pem
+-rw-r--r-- 1 root root 1.8K Apr  2 16:37 kube-apiserver.pem
+-rw-r--r-- 1 root root 1.1K Apr  2 16:37 kube-controller-manager.csr
+-rw------- 1 root root 1.7K Apr  2 16:37 kube-controller-manager-key.pem
+-rw-r--r-- 1 root root 1.4K Apr  2 16:37 kube-controller-manager.pem
+-rw-r--r-- 1 root root 1009 Apr  2 16:37 kube-proxy.csr
+-rw------- 1 root root 1.7K Apr  2 16:37 kube-proxy-key.pem
+-rw-r--r-- 1 root root 1.4K Apr  2 16:37 kube-proxy.pem
+-rw-r--r-- 1 root root 1017 Apr  2 16:37 kube-scheduler.csr
+-rw------- 1 root root 1.7K Apr  2 16:37 kube-scheduler-key.pem
+-rw-r--r-- 1 root root 1.4K Apr  2 16:37 kube-scheduler.pem
+-rw------- 1 root root 1.7K Apr  2 16:37 sa.key
+-rw-r--r-- 1 root root  451 Apr  2 16:37 sa.pub
 ```
 
-#### 3、分发kubernetes集群证书到master-2、master-3节点：
+#### 3、分发kubernetes集群证书到master02、master03节点：
 ```shell
-root@master-1:~# cd /k8s/kubernetes
-root@master-1:/k8s/kubernetes# scp -r ssl root@10.0.0.182:/k8s/kubernetes
-root@master-1:/k8s/kubernetes# scp -r ssl root@10.0.0.183:/k8s/kubernetes
+root@master01:~# cd /k8s/kubernetes
+root@master01:/k8s/kubernetes# scp -r ssl root@master02:/k8s/kubernetes
+root@master01:/k8s/kubernetes# scp -r ssl root@master03:/k8s/kubernetes
 ```
 
 #### 4、初始化kubeconfig配置文件：
 ```shell
-root@master-1:~# cd /k8s/kubernetes/cfg/init-kubeconfig
-root@master-1:/k8s/kubernetes/cfg/init-kubeconfig# ./init-kubeconfig.sh 
+root@master01:~# cd /k8s/kubernetes/cfg/init-kubeconfig
+root@master01:/k8s/kubernetes/cfg/init-kubeconfig# ./init-kubeconfig.sh 
 Cluster "kubernetes" set.
 User "kube-scheduler" set.
 Context "kube-scheduler@kubernetes" created.
@@ -447,48 +452,49 @@ Cluster "kubernetes" set.
 User "kubelet-bootstrap" set.
 Context "kubelet-bootstrap@kubernetes" created.
 Switched to context "kubelet-bootstrap@kubernetes".
-Token: 6b53b52930ed480bb02048d7c547f0ea,kubelet-bootstrap,10001,system:kubelet-bootstrap
-root@master-1:/k8s/kubernetes/cfg/init-kubeconfig# ls -lh ../
-total 64K
--rw------- 1 root root 6.1K Jul 20 15:31 admin.kubeconfig
--rw------- 1 root root 2.1K Jul 20 15:31 bootstrap.kubeconfig
-drwxr-xr-x 2 root root 4.0K Jul 20 15:08 init-kubeconfig
--rw-r--r-- 1 root root 1.5K Jul 18 16:54 kube-apiserver
--rw-r--r-- 1 root root 1017 Jul 18 16:54 kube-controller-manager
--rw------- 1 root root 6.2K Jul 20 15:31 kube-controller-manager.kubeconfig
--rw-r--r-- 1 root root  638 Jul 18 16:54 kubelet
--rw-r--r-- 1 root root  206 Jul 18 16:54 kube-proxy
--rw------- 1 root root 6.1K Jul 20 15:31 kube-proxy.kubeconfig
--rw-r--r-- 1 root root  371 Jul 18 16:54 kube-scheduler
--rw------- 1 root root 6.2K Jul 20 15:31 kube-scheduler.kubeconfig
--rw-r--r-- 1 root root   82 Jul 20 15:31 token.csv
+Token: 5472....b063....c6b4....9b08....,kubelet-bootstrap,10001,system:kubelet-bootstrap
+root@master01:/k8s/kubernetes/cfg/init-kubeconfig# ls -lh ../
+total 68K
+-rw------- 1 root root 6.1K Apr  2 16:41 admin.kubeconfig
+-rw------- 1 root root 2.1K Apr  2 16:41 bootstrap.kubeconfig
+drwxr-xr-x 2 root root 4.0K Mar 30 18:36 init-kubeconfig
+-rw-r--r-- 1 root root 1.5K Apr  2 16:54 kube-apiserver
+-rw-r--r-- 1 root root 1.1K Jan 30 09:30 kube-controller-manager
+-rw------- 1 root root 6.2K Apr  2 16:41 kube-controller-manager.kubeconfig
+-rw-r--r-- 1 root root  594 Mar 30 18:54 kubelet
+-rw------- 1 root root 2.2K Apr  2 17:09 kubelet.kubeconfig
+-rw-r--r-- 1 root root  181 Jan 30 09:56 kube-proxy
+-rw------- 1 root root 6.1K Apr  2 16:41 kube-proxy.kubeconfig
+-rw-r--r-- 1 root root  346 Jan 30 09:30 kube-scheduler
+-rw------- 1 root root 6.2K Apr  2 16:41 kube-scheduler.kubeconfig
+-rw-r--r-- 1 root root   82 Apr  2 16:41 token.csv
 ```
 
-#### 5、分发kubeconfig配置文件到master-2、master-3节点：
+#### 5、分发kubeconfig配置文件到master02、master03节点：
 ```shell
 root@master-1:~# cd /k8s/kubernetes
-root@master-1:/k8s/kubernetes# scp -r cfg root@10.0.0.182:/k8s/kubernetes
-root@master-1:/k8s/kubernetes# scp -r cfg root@10.0.0.183:/k8s/kubernetes
+root@master-1:/k8s/kubernetes# scp -r cfg root@master02:/k8s/kubernetes
+root@master-1:/k8s/kubernetes# scp -r cfg root@master03:/k8s/kubernetes
 ```
 
-#### 6、调整master-1、master-2、master-3节点kube-apiserver配置：
+#### 6、调整master01、master02、master03节点kube-apiserver配置：
 master-1：
 ```shell
-root@master-1:~# vi /k8s/kubernetes/cfg/kube-apiserver
+root@master01:~# vi /k8s/kubernetes/cfg/kube-apiserver
 KUBE_APISERVER_ARGS=" \
-    --advertise-address=10.0.0.181 \                                                          # 调整此项
+    --advertise-address=10.20.1.201 \                                                              # 调整此项
     --allow-privileged=true \
     --authorization-mode=Node,RBAC \
     --enable-admission-plugins=NodeRestriction \
     --anonymous-auth=false \
     --bind-address=0.0.0.0 \
     --secure-port=6443 \
-    --enable-bootstrap-token-auth \
+    --enable-bootstrap-token-auth=true \
     --token-auth-file=/k8s/kubernetes/cfg/token.csv \
     --client-ca-file=/k8s/kubernetes/ssl/ca.pem \
     --tls-cert-file=/k8s/kubernetes/ssl/kube-apiserver.pem \
     --tls-private-key-file=/k8s/kubernetes/ssl/kube-apiserver-key.pem \
-    --etcd-servers=https://10.0.0.181:2379,https://10.0.0.182:2379,https://10.0.0.183:2379 \  # 调整此项
+    --etcd-servers=https://10.20.1.201:2379,https://10.20.1.202:2379,https://10.20.1.203:2379 \    # 调整此项
     --etcd-cafile=/k8s/etcd/ssl/ca.pem \
     --etcd-certfile=/k8s/etcd/ssl/etcd.pem \
     --etcd-keyfile=/k8s/etcd/ssl/etcd-key.pem \
@@ -504,26 +510,25 @@ KUBE_APISERVER_ARGS=" \
     --requestheader-extra-headers-prefix=X-Remote-Extra- \
     --requestheader-group-headers=X-Remote-Group \
     --requestheader-username-headers=X-Remote-User \
-    --logtostderr=true \
     --v=2"
 ```
 master-2：
 ```shell
-root@master-2:~# vi /k8s/kubernetes/cfg/kube-apiserver
+root@master02:~# vi /k8s/kubernetes/cfg/kube-apiserver
 KUBE_APISERVER_ARGS=" \
-    --advertise-address=10.0.0.182 \
+    --advertise-address=10.20.1.202 \
     --allow-privileged=true \
     --authorization-mode=Node,RBAC \
     --enable-admission-plugins=NodeRestriction \
     --anonymous-auth=false \
     --bind-address=0.0.0.0 \
     --secure-port=6443 \
-    --enable-bootstrap-token-auth \
+    --enable-bootstrap-token-auth=true \
     --token-auth-file=/k8s/kubernetes/cfg/token.csv \
     --client-ca-file=/k8s/kubernetes/ssl/ca.pem \
     --tls-cert-file=/k8s/kubernetes/ssl/kube-apiserver.pem \
     --tls-private-key-file=/k8s/kubernetes/ssl/kube-apiserver-key.pem \
-    --etcd-servers=https://10.0.0.181:2379,https://10.0.0.182:2379,https://10.0.0.183:2379 \
+    --etcd-servers=https://10.20.1.201:2379,https://10.20.1.202:2379,https://10.20.1.203:2379 \
     --etcd-cafile=/k8s/etcd/ssl/ca.pem \
     --etcd-certfile=/k8s/etcd/ssl/etcd.pem \
     --etcd-keyfile=/k8s/etcd/ssl/etcd-key.pem \
@@ -539,26 +544,25 @@ KUBE_APISERVER_ARGS=" \
     --requestheader-extra-headers-prefix=X-Remote-Extra- \
     --requestheader-group-headers=X-Remote-Group \
     --requestheader-username-headers=X-Remote-User \
-    --logtostderr=true \
     --v=2"
 ```
 master-3：
 ```shell
-root@master-3:~# vi /k8s/kubernetes/cfg/kube-apiserver
+root@master03:~# vi /k8s/kubernetes/cfg/kube-apiserver
 KUBE_APISERVER_ARGS=" \
-    --advertise-address=10.0.0.183 \
+    --advertise-address=10.20.1.203 \
     --allow-privileged=true \
     --authorization-mode=Node,RBAC \
     --enable-admission-plugins=NodeRestriction \
     --anonymous-auth=false \
     --bind-address=0.0.0.0 \
     --secure-port=6443 \
-    --enable-bootstrap-token-auth \
+    --enable-bootstrap-token-auth=true \
     --token-auth-file=/k8s/kubernetes/cfg/token.csv \
     --client-ca-file=/k8s/kubernetes/ssl/ca.pem \
     --tls-cert-file=/k8s/kubernetes/ssl/kube-apiserver.pem \
     --tls-private-key-file=/k8s/kubernetes/ssl/kube-apiserver-key.pem \
-    --etcd-servers=https://10.0.0.181:2379,https://10.0.0.182:2379,https://10.0.0.183:2379 \
+    --etcd-servers=https://10.20.1.201:2379,https://10.20.1.202:2379,https://10.20.1.203:2379 \
     --etcd-cafile=/k8s/etcd/ssl/ca.pem \
     --etcd-certfile=/k8s/etcd/ssl/etcd.pem \
     --etcd-keyfile=/k8s/etcd/ssl/etcd-key.pem \
@@ -574,46 +578,45 @@ KUBE_APISERVER_ARGS=" \
     --requestheader-extra-headers-prefix=X-Remote-Extra- \
     --requestheader-group-headers=X-Remote-Group \
     --requestheader-username-headers=X-Remote-User \
-    --logtostderr=true \
     --v=2"
 ```
 
 #### 7、启动kube-apiserver：
 ```shell
-root@master-1:~# systemctl start kube-apiserver && systemctl enable kube-apiserver
-root@master-1:~# ssh root@10.0.0.182 'systemctl start kube-apiserver && systemctl enable kube-apiserver'
-root@master-1:~# ssh root@10.0.0.183 'systemctl start kube-apiserver && systemctl enable kube-apiserver'
+root@master01:~# systemctl start kube-apiserver && systemctl enable kube-apiserver
+root@master01:~# ssh root@master02 'systemctl start kube-apiserver && systemctl enable kube-apiserver'
+root@master01:~# ssh root@master02 'systemctl start kube-apiserver && systemctl enable kube-apiserver'
 ```
 
 #### 8、启动kube-controller-manager、kube-scheduler：
 ```shell
-root@master-1:~# systemctl start kube-controller-manager kube-scheduler && systemctl enable kube-controller-manager kube-scheduler
-root@master-1:~# ssh root@10.0.0.182 'systemctl start kube-controller-manager kube-scheduler && systemctl enable kube-controller-manager kube-scheduler'
-root@master-1:~# ssh root@10.0.0.183 'systemctl start kube-controller-manager kube-scheduler && systemctl enable kube-controller-manager kube-scheduler'
+root@master01:~# systemctl start kube-controller-manager kube-scheduler && systemctl enable kube-controller-manager kube-scheduler
+root@master01:~# ssh root@master02 'systemctl start kube-controller-manager kube-scheduler && systemctl enable kube-controller-manager kube-scheduler'
+root@master01:~# ssh root@master03 'systemctl start kube-controller-manager kube-scheduler && systemctl enable kube-controller-manager kube-scheduler'
 ```
 
-#### 9、添加kubernetes可执行程序路径（master-2、master-3也需要）：
+#### 9、添加kubernetes可执行程序路径（master02、master03也需要）：
 ```shell
 root@master-1:~# echo 'PATH=$PATH:/k8s/kubernetes/bin' >> /etc/profile
 root@master-1:~# . /etc/profile
 ```
 
-#### 10、生成集群管理员配置（master-2、master-3也需要）：
+#### 10、生成集群管理员配置（master02、master03也需要）：
 ```shell
-root@master-1:~# mkdir -p ~/.kube
-root@master-1:~# cp /k8s/kubernetes/cfg/admin.kubeconfig ~/.kube/config
+root@master01:~# mkdir -p ~/.kube
+root@master01:~# cp /k8s/kubernetes/cfg/admin.kubeconfig ~/.kube/config
 ```
 
 #### 11、查看集群各组件状态：
 ```shell
-root@master-1:~# kubectl get cs
+root@master01:~# kubectl get cs
 Warning: v1 ComponentStatus is deprecated in v1.19+
 NAME                 STATUS    MESSAGE                         ERROR
-scheduler            Healthy   ok                              
 controller-manager   Healthy   ok                              
-etcd-0               Healthy   {"health":"true","reason":""}   
-etcd-2               Healthy   {"health":"true","reason":""}   
+scheduler            Healthy   ok                              
 etcd-1               Healthy   {"health":"true","reason":""}   
+etcd-0               Healthy   {"health":"true","reason":""}   
+etcd-2               Healthy   {"health":"true","reason":""}
 ```
 
 #### 12、kubelet-bootstrap账号授权：
