@@ -946,7 +946,7 @@ root@master01:~/k8s-v1.23.17/ingress-controllers/traefik-v2.9.6# kubectl apply -
 ingressroute.traefik.containo.us/traefik-dashboard created
 ```
 
-#### 7、通过浏览器访问https://traefik.speech.local能够打开traefik控制台（确保traefik.speech.local域名能够正常解析到集群）：
+#### 7、通过浏览器访问 https://traefik.speech.local 能够打开traefik控制台（确保traefik.speech.local域名能够正常解析到集群）：
 ![](./img/traefik-ui.png)
 
 
@@ -1044,7 +1044,7 @@ root@master01:~/k8s-v1.23.17/dashboard-v2.5.1# ./get_token.sh
 eyJhbGciOiJSUzI1NiIsImtpZCI6IktiMm.....
 ```
 
-#### 8、通过浏览器访问https://dashboard.speech.local能够打开kubernetes控制台（确保dashboard.speech.local域名能够正常解析到集群）：
+#### 8、通过浏览器访问 https://dashboard.speech.local 能够打开kubernetes控制台（确保dashboard.speech.local域名能够正常解析到集群）：
 ![](./img/kubernetes-ui.png)
 
 
