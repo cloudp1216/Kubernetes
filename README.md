@@ -472,13 +472,13 @@ drwxr-xr-x 2 root root 4.0K Mar 30 18:36 init-kubeconfig
 
 #### 5、分发kubeconfig配置文件到master02、master03节点：
 ```shell
-root@master-1:~# cd /k8s/kubernetes
-root@master-1:/k8s/kubernetes# scp -r cfg root@master02:/k8s/kubernetes
-root@master-1:/k8s/kubernetes# scp -r cfg root@master03:/k8s/kubernetes
+root@master01:~# cd /k8s/kubernetes
+root@master01:/k8s/kubernetes# scp -r cfg root@master02:/k8s/kubernetes
+root@master01:/k8s/kubernetes# scp -r cfg root@master03:/k8s/kubernetes
 ```
 
 #### 6、调整master01、master02、master03节点kube-apiserver配置：
-master-1：
+master01：
 ```shell
 root@master01:~# vi /k8s/kubernetes/cfg/kube-apiserver
 KUBE_APISERVER_ARGS=" \
@@ -512,7 +512,7 @@ KUBE_APISERVER_ARGS=" \
     --requestheader-username-headers=X-Remote-User \
     --v=2"
 ```
-master-2：
+master02：
 ```shell
 root@master02:~# vi /k8s/kubernetes/cfg/kube-apiserver
 KUBE_APISERVER_ARGS=" \
@@ -546,7 +546,7 @@ KUBE_APISERVER_ARGS=" \
     --requestheader-username-headers=X-Remote-User \
     --v=2"
 ```
-master-3：
+master03：
 ```shell
 root@master03:~# vi /k8s/kubernetes/cfg/kube-apiserver
 KUBE_APISERVER_ARGS=" \
@@ -597,8 +597,8 @@ root@master01:~# ssh root@master03 'systemctl start kube-controller-manager kube
 
 #### 9、添加kubernetes可执行程序路径（master02、master03也需要）：
 ```shell
-root@master-1:~# echo 'PATH=$PATH:/k8s/kubernetes/bin' >> /etc/profile
-root@master-1:~# . /etc/profile
+root@master01:~# echo 'PATH=$PATH:/k8s/kubernetes/bin' >> /etc/profile
+root@master01:~# . /etc/profile
 ```
 
 #### 10、生成集群管理员配置（master02、master03也需要）：
@@ -621,7 +621,7 @@ etcd-2               Healthy   {"health":"true","reason":""}
 
 #### 12、kubelet-bootstrap账号授权：
 ```shell
-root@master-1:~# kubectl create clusterrolebinding kubelet-bootstrap --clusterrole=system:node-bootstrapper --user=kubelet-bootstrap
+root@master01:~# kubectl create clusterrolebinding kubelet-bootstrap --clusterrole=system:node-bootstrapper --user=kubelet-bootstrap
 clusterrolebinding.rbac.authorization.k8s.io/kubelet-bootstrap created
 ```
 
