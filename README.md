@@ -948,7 +948,7 @@ ingressroute.traefik.containo.us/traefik-dashboard created
 ```
 
 #### 7、通过浏览器访问 https://traefik.speech.local 能够打开traefik控制台（确保traefik.speech.local域名能够正常解析到集群）：
-![](./img/traefik-ui.png)
+![](./img/traefik-ui.jpg)
 
 
 ## 九、部署Dashboard
