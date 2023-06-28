@@ -1262,7 +1262,7 @@ node06     Ready    NVIDIA-A40.4                 12m   v1.23.17   10.20.1.209   
 ```
 
 
-## 十三、调度用户容器测试
+## 十三、调度一个用户容器测试
 #### 1、创建用户Deployment
 ```shell
 root@master01:~# vi test.yaml
