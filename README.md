@@ -7,9 +7,9 @@
 #### 2、集群规划：
 |ID  |服务器IP    |主机名           |系统版本            |
 |:-: |:-:         |:-:              |:-:                 |
-|1   |10.20.1.201 |master01,etcd-1  |Ubuntu 18.04.6 LTS  |
-|2   |10.20.1.202 |master02,etcd-2  |Ubuntu 18.04.6 LTS  |
-|3   |10.20.1.203 |master03,etcd-3  |Ubuntu 18.04.6 LTS  |
+|1   |10.20.1.201 |master01, etcd-1 |Ubuntu 18.04.6 LTS  |
+|2   |10.20.1.202 |master02, etcd-2 |Ubuntu 18.04.6 LTS  |
+|3   |10.20.1.203 |master03, etcd-3 |Ubuntu 18.04.6 LTS  |
 |4   |10.20.1.204 |node01           |Ubuntu 20.04.6 LTS  |
 |5   |10.20.1.205 |node02           |Ubuntu 20.04.6 LTS  | 
 |6   |10.20.1.206 |node03           |Ubuntu 20.04.6 LTS  |
