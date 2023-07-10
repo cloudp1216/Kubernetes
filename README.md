@@ -1001,7 +1001,7 @@ root@master01:~/k8s-v1.23.17/dashboard-v2.5.1# kubectl create secret tls dashboa
 secret/dashboard.speech.local created
 ```
 
-#### 6、生成dashboard.speech.local路由规则（Traefik要提前部署）
+#### 6、生成dashboard.speech.local路由规则（Traefik要提前部署）：
 ```shell
 root@master01:~/k8s-v1.23.17/dashboard-v2.5.1# vi kubernetes-ui.yaml
 apiVersion: traefik.containo.us/v1alpha1
@@ -1263,7 +1263,7 @@ node06     Ready    NVIDIA-A40.4                 12m   v1.23.17   10.20.1.209   
 
 
 ## 十三、调度一个用户容器测试
-#### 1、创建用户Deployment
+#### 1、创建用户Deployment：
 ```shell
 root@master01:~# vi test.yaml
 apiVersion: apps/v1
