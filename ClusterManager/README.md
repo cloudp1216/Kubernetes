@@ -55,7 +55,7 @@ Switched to context "cloudp@kubernetes".
 Please distribute this file 'cloudp.kubeconfig' to user.
 ```
 
-### 7、执行用户目录下`setup4-deployment.sh`脚本，生成deployment.yaml模板文件，该文件为用户创建pod的模板文件，文件内容要根据用户需调整，修改完以后执行`kubectl apply -f deployment.yaml`创建用户pod：
+#### 7、执行用户目录下`setup4-deployment.sh`脚本，生成deployment.yaml模板文件，该文件为用户创建pod的模板文件，文件内容要根据用户需调整，修改完以后执行`kubectl apply -f deployment.yaml`创建用户pod：
 ```shell
 root@master03:~/ClusterManager/Users/cloudp# ./setup4-deployment.sh 
 Please modify the user 'deployment.yaml' file and create pods.
