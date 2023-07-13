@@ -68,6 +68,8 @@ spec:
         #  mountPath: /dev/shm
         #- name: cds
         #  mountPath: /$SA/cds
+        #- name: data
+        #  mountPath: /home/$SA
       #volumes:
       #- name: shm
       #  emptyDir:
