@@ -39,7 +39,7 @@ spec:
       #    requiredDuringSchedulingIgnoredDuringExecution:
       #      nodeSelectorTerms:
       #      - matchExpressions:
-      #        - key: "GPU.Model.NVIDIA-A10"
+      #        - key: "GPU.Model.NVIDIA-A100-PCIE-40GB"
       #          operator: Exists
       containers:
       - name: $SA
