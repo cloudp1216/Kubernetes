@@ -25,7 +25,7 @@ Username="cloudp"
 ...
 ```
 
-#### 4、执行用户目录下`setup1-ns.sh`脚本，创建用户命名空间，交互式`y`表示应用到集群（即创建），否则只生成yaml清单文件：
+#### 4、执行用户目录下`setup1-ns.sh`脚本，创建用户命名空间：
 ```shell
 root@master03:~/ClusterManager/Users/cloudp# ./setup1-ns.sh 
 Init file 'cloudp-ns.yaml' ok.
@@ -34,7 +34,7 @@ Apply to cluster, execute 'kubectl apply -f cloudp-ns.yaml' command ?
 namespace/cloudp created
 ```
 
-#### 5、执行用户目录下`setup2-rbac.sh`脚本，创建sa用户和rbac授权，交互式`y`表示应用到集群（即创建），否则只生成yaml清单文件：
+#### 5、执行用户目录下`setup2-rbac.sh`脚本，创建sa用户和rbac授权：
 ```shell
 root@master03:~/ClusterManager/Users/cloudp# ./setup2-rbac.sh
 Init file 'cloudp-rbac.yaml' ok.
@@ -45,7 +45,7 @@ rolebinding.rbac.authorization.k8s.io/cloudp created
 clusterrolebinding.rbac.authorization.k8s.io/cloudp created
 ```
 
-#### 6、执行用户目录下`setup3-kubeconfig.sh`脚本，创建用户kubeconfig文件，该文件作为用户访问集群的唯一凭证（文件内部包含用户访问集群的Token认证信息），需要单独发给用户：
+#### 6、执行用户目录下`setup3-kubeconfig.sh`脚本，创建用户kubeconfig文件：
 ```shell
 root@master03:~/ClusterManager/Users/cloudp# ./setup3-kubeconfig.sh
 Cluster "kubernetes" set.
@@ -55,7 +55,7 @@ Switched to context "cloudp@kubernetes".
 Please distribute this file 'cloudp.kubeconfig' to user.
 ```
 
-#### 7、执行用户目录下`setup4-deployment.sh`脚本，生成deployment.yaml模板文件，该文件为用户创建pod的模板文件，文件内容要根据用户需调整，修改完以后执行`kubectl apply -f deployment.yaml`创建用户pod：
+#### 7、执行用户目录下`setup4-deployment.sh`脚本，生成```deployment.yaml```模板文件文件，内容要根据用户需调整，修改完以后执行`kubectl apply -f deployment.yaml`创建用户pod：
 ```shell
 root@master03:~/ClusterManager/Users/cloudp# ./setup4-deployment.sh 
 Please modify the user 'deployment.yaml' file and create pods.
