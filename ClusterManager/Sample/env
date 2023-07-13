@@ -1,0 +1,19 @@
+#!/bin/bash
+
+
+# Username
+Username="sample"
+
+
+# Api Service
+ApiServer="https://master.k8s.speech.local:8443"
+
+
+# Service Account
+SA="$Username"
+
+
+# Namespace
+NS="$Username"
+
+
