@@ -68,8 +68,6 @@ spec:
         #  mountPath: /dev/shm
         #- name: cds
         #  mountPath: /$SA/cds
-        #- name: data
-        #  mountPath: /home/$SA
       #volumes:
       #- name: shm
       #  emptyDir:
@@ -78,10 +76,6 @@ spec:
       #- name: cds
       #  hostPath:
       #    path: /gpfs/home/$SA/cds
-      #  name: data
-      #  nfs: 
-      #    server: x.x.x.x
-      #    path: /export/dir
 #---
 #apiVersion: v1
 #kind: Service
