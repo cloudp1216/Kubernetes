@@ -59,14 +59,14 @@ https://dl.k8s.io/v1.23.17/kubernetes-server-linux-amd64.tar.gz
 - 配置主机名
 - 配置master01到master02、master03免密登录
 - 关闭并卸载unattended-upgrades自动更新服务
-- 提前安装ipvsadm、ipset
+- 提前安装ipvsadm、ipset、conntrack
 - 提前安装私有镜像仓库Harbor（当前Harbor域名解析为：hub.speech.local）
 - 添加各节点DNS解析（内部域为：k8s.speech.local）或调整本地hosts文件
 - GPU设备需要安装相关驱动及cuda
 - 安装配置Docker（各个节点都需要）：
 ```shell
 root@master01:~# cd k8s-v1.23.17/docker-ce-v20.10.12/
-root@master01:~/k8s-v1.23.9/docker-ce-v20.10.12# dpkg -i containerd.io-1.6.8_amd64.deb
+root@master01:~/k8s-v1.23.9/docker-ce-v20.10.12# dpkg -i containerd-1.6.8_amd64.deb
 root@master01:~/k8s-v1.23.9/docker-ce-v20.10.12# cd ubuntu18.04        # 或cd ubuntu20.04
 root@master01:~/k8s-v1.23.9/docker-ce-v20.10.12# dpkg -i *
 ```
